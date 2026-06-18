@@ -1,0 +1,45 @@
+# See https://help.github.com/articles/ignoring-files for more about ignoring files.
+
+# Ignore git-deployed files:
+public/assets
+public/packs
+public/packs-test
+vendor/bundle
+
+# Ignore database configuration
+config/database.yml
+
+# Ignore logfiles and tempfiles:
+log/*
+tmp/*
+!log/.keep
+!tmp/.keep
+
+# Ignore uploaded files in development:
+storage/*
+!storage/.keep
+tmp/storage/*
+!tmp/storage/.keep
+
+# Ignore master key for decrypting credentials and more.
+config/master.key
+config/credentials/*.key
+
+# Ignore Kamal secrets
+.kamal/secrets
+
+# Ignem/editor files:
+.byebug_history
+.bundle
+.rspec
+.env
+.env.*
+.history
+*.swap
+*.swo
+*.swn
+*.swoff
+*.swp
+*.bak
+*.orig
+.DS_Store
