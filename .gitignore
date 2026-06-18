@@ -6,8 +6,7 @@ public/packs
 public/packs-test
 vendor/bundle
 
-# Ignore database configuration
-config/database.yml
+
 
 # Ignore logfiles and tempfiles:
 log/*
