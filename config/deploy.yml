@@ -23,6 +23,8 @@ servers:
 proxy:
   ssl: true
   host: dugout.odj.fi
+  ssl_redirect: false
+  forward_headers: true
 
 # Where you keep your container images.
 registry:
