@@ -1,0 +1,33 @@
+<h1><%= @competition.name %></h1>
+
+<p><strong>League:</strong> <%= link_to @competition.league.name, @competition.league %></p>
+<p><strong>Format:</strong> <%= @competition.format %></p>
+<p><strong>Platform:</strong> <%= @competition.platform %></p>
+
+<h2>Teams</h2>
+<% if @competition.teams.any? %>
+  <ul>
+    <% @competition.teams.each do |team| %>
+      <li><%= link_to team.name, team %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No teams yet.</p>
+<% end %>
+
+<h2>Matches</h2>
+<% if @competition.matches.any? %>
+  <ul>
+    <% @competition.matches.each do |match| %>
+      <li>match <%= match.api_id %> - <%= match.match_teams.size %> teams
+
+      <% mts = match.match_teams.sort_by(&:id) %>
+          <%= link_to mts[0].team.name, mts[0].team %>
+          <%= mts[0].score %> - <%= mts[1].score %>
+          <%= link_to mts[1].team.name, mts[1].team %>
+        </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No matches yet.</p>
+<% end %>

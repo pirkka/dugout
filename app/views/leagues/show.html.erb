@@ -1,3 +1,11 @@
-<h1>
-    <%= @league.name %>
-</h1>
+<h1><%= @league.name %></h1>
+
+<% if @league.competitions.any? %>
+  <ul>
+    <% @league.competitions.each do |comp| %>
+      <li><%= link_to comp.name, comp %> (<%= comp.format %>)</li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No competitions yet.</p>
+<% end %>

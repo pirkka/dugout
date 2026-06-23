@@ -13,4 +13,6 @@ Rails.application.routes.draw do
   root "dugout#index"
 
   get 'leagues/:slug' => 'leagues#show', as: :league
+  get 'competitions/:slug' => 'competitions#show', as: :competition
+  get 'teams/:slug' => 'teams#show', as: :team
 end

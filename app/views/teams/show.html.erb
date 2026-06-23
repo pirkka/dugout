@@ -1,0 +1,10 @@
+<h1><%= @team.name %></h1>
+
+<% if @team.competitions.any? %>
+  <h2>Competitions</h2>
+  <ul>
+    <% @team.competitions.each do |comp| %>
+      <li><%= link_to comp.name, comp %></li>
+    <% end %>
+  </ul>
+<% end %>

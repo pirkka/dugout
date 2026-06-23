@@ -1,0 +1,11 @@
+one_home:
+  match: season_opener
+  team: cackling_furies
+  score: 2
+  conceded: 1
+
+one_away:
+  match: season_opener
+  team: razorback_raiders
+  score: 1
+  conceded: 2

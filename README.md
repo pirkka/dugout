@@ -13,7 +13,7 @@ bundle install
 bin/rails db:create db:migrate db:seed
 ```
 
-### BB3 API key
+### Cyanide API key
 
 The BB3 API key is stored in Rails encrypted credentials:
 
@@ -21,7 +21,7 @@ The BB3 API key is stored in Rails encrypted credentials:
 bin/rails credentials:edit
 ```
 
-Key: `bb3_api_key`
+Key: `cyanide_api_key`
 
 ## Test suite
 
@@ -29,9 +29,9 @@ Key: `bb3_api_key`
 bin/rails test
 ```
 
-## BB3 API sync
+## Cyanide API sync
 
-Refresh a league's data from the BB3 API:
+Refresh a league's data from the Cyanide BB3 API:
 
 ```sh
 bin/rails leagues:refresh[id]

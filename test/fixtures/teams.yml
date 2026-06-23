@@ -1,9 +1,9 @@
 cackling_furies:
   name: Cackling Furies
   slug: cackling-furies
-  inception: <%= Time.zone.now %>
+  api_id: "t001"
 
 razorback_raiders:
   name: Razorback Raiders
   slug: razorback-raiders
-  inception: <%= Time.zone.now %>
+  api_id: "t002"
