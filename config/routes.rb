@@ -11,4 +11,6 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "dugout#index"
+
+  get 'leagues/:slug' => 'leagues#show', as: :league
 end

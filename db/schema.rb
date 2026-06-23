@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_122758) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_22_183241) do
   create_table "competitions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "format", null: false
@@ -22,11 +22,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_122758) do
   end
 
   create_table "leagues", force: :cascade do |t|
+    t.json "api_data"
+    t.string "api_id"
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.integer "platform", null: false
     t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["api_id"], name: "index_leagues_on_api_id"
   end
 
   create_table "teams", force: :cascade do |t|
