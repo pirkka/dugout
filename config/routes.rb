@@ -15,4 +15,6 @@ Rails.application.routes.draw do
   get 'leagues/:slug' => 'leagues#show', as: :league
   get 'competitions/:slug' => 'competitions#show', as: :competition
   get 'teams/:slug' => 'teams#show', as: :team
+  get 'matches/:id' => 'matches#show', as: :match
+  post 'leagues/:slug/refresh' => 'leagues#refresh', as: :refresh_league
 end

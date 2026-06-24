@@ -1,0 +1,47 @@
+<% mts = @match.match_teams.sort_by(&:id) %>
+<h1>
+  <% if mts.size == 2 && mts[0].team && mts[1].team %>
+    <%= link_to mts[0].team.name, mts[0].team %> <%= mts[0].score %> - <%= mts[1].score %> <%= link_to mts[1].team.name, mts[1].team %>
+  <% else %>
+    Match <%= @match.id %>
+  <% end %>
+</h1>
+
+<p><strong>Competition:</strong> <%= link_to @match.competition.name, @match.competition %></p>
+
+<% if @match.started %>
+  <p><strong>Started:</strong> <%= @match.started.in_time_zone("Helsinki").strftime("%d.%m.%Y %H:%M") %></p>
+<% end %>
+<% if @match.finished %>
+  <p><strong>Finished:</strong> <%= @match.finished.in_time_zone("Helsinki").strftime("%d.%m.%Y %H:%M") %></p>
+<% end %>
+<% if @match.round %>
+  <p><strong>Round:</strong> <%= @match.round %></p>
+<% end %>
+
+<h2>Team Stats</h2>
+<% @match.match_teams.sort_by(&:id).each do |mt| %>
+  <h3><%= link_to mt.team.name, mt.team %> (<%= mt.score %> - <%= mt.conceded %>)</h3>
+  <% if mt.api_data %>
+    <table>
+      <tr><td>Touchdowns</td><td><%= mt.api_data["inflictedtouchdowns"] %></td></tr>
+      <tr><td>Casualties inflicted</td><td><%= mt.api_data["inflictedcasualties"] %></td></tr>
+      <tr><td>Casualties sustained</td><td><%= mt.api_data["sustainedcasualties"] %></td></tr>
+      <tr><td>Passes</td><td><%= mt.api_data["inflictedpasses"] %></td></tr>
+      <tr><td>Catches</td><td><%= mt.api_data["inflictedcatches"] %></td></tr>
+      <tr><td>Interceptions</td><td><%= mt.api_data["inflictedinterceptions"] %></td></tr>
+      <tr><td>Tackles</td><td><%= mt.api_data["inflictedtackles"] %></td></tr>
+      <tr><td>Meters running</td><td><%= mt.api_data["inflictedmetersrunning"] %></td></tr>
+      <tr><td>Meters passing</td><td><%= mt.api_data["inflictedmeterspassing"] %></td></tr>
+      <tr><td>KO inflicted</td><td><%= mt.api_data["inflictedko"] %></td></tr>
+      <tr><td>Injuries inflicted</td><td><%= mt.api_data["inflictedinjuries"] %></td></tr>
+      <tr><td>Dead inflicted</td><td><%= mt.api_data["inflicteddead"] %></td></tr>
+      <tr><td>KO sustained</td><td><%= mt.api_data["sustainedko"] %></td></tr>
+      <tr><td>Injuries sustained</td><td><%= mt.api_data["sustainedinjuries"] %></td></tr>
+      <tr><td>Dead sustained</td><td><%= mt.api_data["sustaineddead"] %></td></tr>
+      <tr><td>Pushouts</td><td><%= mt.api_data["inflictedpushouts"] %></td></tr>
+      <tr><td>Expulsions</td><td><%= mt.api_data["sustainedexpulsions"] %></td></tr>
+      <tr><td>Value</td><td><%= mt.api_data["value"] %></td></tr>
+    </table>
+  <% end %>
+<% end %>

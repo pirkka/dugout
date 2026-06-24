@@ -18,14 +18,14 @@
 <h2>Matches</h2>
 <% if @competition.matches.any? %>
   <ul>
-    <% @competition.matches.each do |match| %>
-      <li>match <%= match.api_id %> - <%= match.match_teams.size %> teams
-
+    <% @competition.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.each do |match| %>
       <% mts = match.match_teams.sort_by(&:id) %>
-          <%= link_to mts[0].team.name, mts[0].team %>
-          <%= mts[0].score %> - <%= mts[1].score %>
-          <%= link_to mts[1].team.name, mts[1].team %>
-        </li>
+      <li>
+        <%= link_to match.started.strftime("%B %d, %Y"), match %>:
+        <%= link_to mts[0].team.name, mts[0].team %>
+        <%= link_to "#{mts[0].score} - #{mts[1].score}", match %>
+        <%= link_to mts[1].team.name, mts[1].team %>
+      </li>
     <% end %>
   </ul>
 <% else %>

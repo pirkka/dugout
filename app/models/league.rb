@@ -29,13 +29,13 @@ class League < ApplicationRecord
   rescue CyanideApi::NotFoundError
     errors.add(:base, "League not found on API")
     false
-  rescue CyanideApi::Error => e
+  rescue ::CyanideApi::Error => e
     errors.add(:base, e.message)
     false
   end
 
   def refresh_competitions
-    client = CyanideApi::Client.new
+    client = ::CyanideApi::Client.new
     data = client.competitions(league_id: api_id, league_name: name, platform: platform)
     api_competitions = data["competitions"] || []
 
