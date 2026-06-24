@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_23_164356) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_113511) do
   create_table "competition_teams", force: :cascade do |t|
     t.json "api_data"
     t.integer "competition_id", null: false
@@ -18,6 +18,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_164356) do
     t.integer "draws"
     t.integer "losses"
     t.integer "matches"
+    t.integer "points"
+    t.integer "position"
     t.integer "team_id", null: false
     t.datetime "updated_at", null: false
     t.integer "wins"

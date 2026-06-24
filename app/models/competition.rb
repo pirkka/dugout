@@ -1,6 +1,6 @@
 class Competition < ApplicationRecord
   belongs_to :league
-  has_many :competition_teams, dependent: :destroy
+  has_many :competition_teams, -> { order(position: :asc) }, dependent: :destroy
   has_many :teams, through: :competition_teams
   has_many :matches, dependent: :destroy
 
@@ -30,6 +30,7 @@ class Competition < ApplicationRecord
       end
     end
 
+    calculate_standings
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Matches not found on API")
@@ -72,5 +73,24 @@ class Competition < ApplicationRecord
   rescue CyanideApi::Error => e
     errors.add(:base, e.message)
     false
+  end
+
+  def calculate_standings
+    standings = competition_teams.includes(:team).map do |ct|
+      matches_played = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id }).count
+      wins = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, score: 1 }).count
+      draws = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, score: 0 }).count
+      losses = matches_played - wins - draws
+      points = wins * 3 + draws
+      ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points)
+      { team: ct.team, matches_played: matches_played, wins: wins, draws: draws, losses: losses, points: points }
+    end
+
+    standings.sort_by! { |s| [-s[:points], -s[:wins], s[:losses]] }
+
+    standings.each_with_index do |standing, index|
+      ct = competition_teams.find_by(team: standing[:team])
+      ct.update!(position: index + 1)
+    end
   end
 end

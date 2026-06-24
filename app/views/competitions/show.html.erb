@@ -4,13 +4,30 @@
 <p><strong>Format:</strong> <%= @competition.format %></p>
 <p><strong>Platform:</strong> <%= @competition.platform %></p>
 
-<h2>Teams</h2>
-<% if @competition.teams.any? %>
-  <ul>
-    <% @competition.teams.each do |team| %>
-      <li><%= link_to team.name, team %></li>
-    <% end %>
-  </ul>
+<h2>Standings</h2>
+<% if @competition.competition_teams.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Pos</th>
+        <th>Team</th>
+        <th>W</th>
+        <th>L</th>
+        <th>D</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @competition.competition_teams.includes(:team).each do |ct| %>
+        <tr>
+          <td><%= ct.position %></td>
+          <td><%= link_to ct.team.name, ct.team %></td>
+          <td><%= ct.wins %></td>
+          <td><%= ct.losses %></td>
+          <td><%= ct.draws %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 <% else %>
   <p>No teams yet.</p>
 <% end %>
