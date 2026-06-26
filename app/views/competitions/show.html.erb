@@ -11,9 +11,11 @@
       <tr>
         <th>Pos</th>
         <th>Team</th>
+        <th>Pld</th>
         <th>W</th>
         <th>L</th>
         <th>D</th>
+        <th>Pts</th>
       </tr>
     </thead>
     <tbody>
@@ -21,9 +23,11 @@
         <tr>
           <td><%= ct.position %></td>
           <td><%= link_to ct.team.name, ct.team %></td>
+          <td><%= ct.matches %></td>
           <td><%= ct.wins %></td>
           <td><%= ct.losses %></td>
           <td><%= ct.draws %></td>
+          <td><%= ct.points %></td>
         </tr>
       <% end %>
     </tbody>

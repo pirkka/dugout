@@ -1,10 +1,25 @@
 <h1><%= @team.name %></h1>
 
-<% if @team.competitions.any? %>
-  <h2>Competitions</h2>
-  <ul>
-    <% @team.competitions.each do |comp| %>
-      <li><%= link_to comp.name, comp %></li>
-    <% end %>
-  </ul>
+<% if @team.matches.any? %>
+  <% matches_by_comp = @team.matches.includes(:competition).group_by(&:competition) %>
+  <% matches_by_comp.each do |competition, matches| %>
+    <h2><%= link_to competition.name, competition %></h2>
+    <ul>
+      <% matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.each do |match| %>
+        <% our_mt = match.match_teams.find { |mt| mt.team_id == @team.id } %>
+        <% opp_mt = match.match_teams.find { |mt| mt.team_id != @team.id } %>
+        <li>
+          <%= link_to match.started&.strftime("%B %d, %Y") || "TBD", match %>:
+          <% if opp_mt %>
+            <%= link_to opp_mt.team.name, opp_mt.team %>
+            <%= link_to "#{our_mt&.score} - #{opp_mt.score}", match %>
+          <% else %>
+            vs TBD
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% else %>
+  <p>No matches yet.</p>
 <% end %>

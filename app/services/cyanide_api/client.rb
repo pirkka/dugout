@@ -45,7 +45,7 @@ module CyanideApi
     end
 
     def matches(competition_name: nil, competition_id: nil, league_name: nil, league_id: nil, platform: nil, limit: nil, start: nil, end_date: nil)
-      params = { bb: 3 }
+      params = { bb: 3, start: Time.now-100.years, limit: 1000 }
       params[:competition_name] = competition_name if competition_name
       params[:competition_id] = competition_id if competition_id
       params[:league_name] = league_name if league_name
