@@ -1,6 +1,6 @@
 class DugoutController < ApplicationController
 
   def index
-    render plain: 'Dugout is running.'
+    @leagues_by_letter = League.order(:name).group_by { |l| l.name[0].upcase }
   end
 end

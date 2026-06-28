@@ -6,6 +6,7 @@ class League < ApplicationRecord
   end
 
   enum :platform, { pc: 0, playstation: 1, xbox: 2 }
+  enum :game_version, { bb1: 0, bb2: 1, bb3: 2 }
 
   FORMAT_MAP = {
     "RoundRobin" => :round_robin,

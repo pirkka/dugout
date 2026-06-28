@@ -1,0 +1,24 @@
+<h1>Leagues</h1>
+
+<% if @leagues_by_letter.any? %>
+  <p>
+    <% ("A".."Z").each do |letter| %>
+      <% if @leagues_by_letter[letter] %>
+        <a href="#letter-<%= letter %>"><%= letter %></a>
+      <% else %>
+        <%= letter %>
+      <% end %>
+    <% end %>
+  </p>
+
+  <% @leagues_by_letter.sort.each do |letter, leagues| %>
+    <h2 id="letter-<%= letter %>"><%= letter %></h2>
+    <ul>
+      <% leagues.each do |league| %>
+        <li><%= link_to league.name, league %></li>
+      <% end %>
+    </ul>
+  <% end %>
+<% else %>
+  <p>No leagues yet.</p>
+<% end %>
