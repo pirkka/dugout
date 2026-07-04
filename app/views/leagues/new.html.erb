@@ -1,0 +1,15 @@
+<h1>Register League</h1>
+
+<%= form_with model: @league do |f| %>
+  <div>
+    <%= f.label :game_version, "Blood Bowl version" %>
+    <%= f.select :game_version, options_for_select([["Blood Bowl 2", "bb2"], ["Blood Bowl 3", "bb3"]]) %>
+  </div>
+
+  <div>
+    <%= f.label t(:api_id) %>
+    <%= f.text_field :api_id %>
+  </div>
+
+  <%= f.submit "Create League" %>
+<% end %>

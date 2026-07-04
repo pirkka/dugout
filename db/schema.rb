@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_28_182028) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_164436) do
   create_table "competition_teams", force: :cascade do |t|
     t.json "api_data"
     t.integer "competition_id", null: false
@@ -58,6 +58,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_182028) do
     t.integer "conceded"
     t.datetime "created_at", null: false
     t.integer "match_id", null: false
+    t.integer "result"
     t.integer "score"
     t.integer "team_id", null: false
     t.datetime "updated_at", null: false

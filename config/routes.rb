@@ -12,9 +12,12 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "dugout#index"
 
+  get 'leagues/new' => 'leagues#new', as: :new_league
+  post 'leagues' => 'leagues#create'
   get 'leagues/:slug' => 'leagues#show', as: :league
   get 'competitions/:slug' => 'competitions#show', as: :competition
   get 'teams/:slug' => 'teams#show', as: :team
   get 'matches/:id' => 'matches#show', as: :match
   post 'leagues/:slug/refresh' => 'leagues#refresh', as: :refresh_league
+  post 'competitions/:slug/refresh' => 'competitions#refresh', as: :refresh_competition
 end

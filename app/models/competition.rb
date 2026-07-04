@@ -13,7 +13,7 @@ class Competition < ApplicationRecord
 
   def refresh_matches
     client = CyanideApi::Client.new
-    data = client.matches(competition_name: name, competition_id: api_id, league_id: league.api_id, platform: platform)
+    data = client.matches(competition_name: name, competition_id: api_id, league_id: league.api_id, platform: platform, game_version: league.game_version)
     api_matches = data["matches"] || []
 
     api_matches.each do |m|
@@ -26,7 +26,16 @@ class Competition < ApplicationRecord
         next unless team
         opponent = api_teams.find { |ot| ot["idteamlisting"] != t["idteamlisting"] }
         mt = match.match_teams.find_or_create_by!(team: team)
-        mt.update!(score: t["score"], conceded: opponent&.dig("score"), api_data: t)
+        goals_scored = t["score"] || 0
+        goals_conceded = opponent&.dig("score") || 0
+        result = if goals_scored > goals_conceded
+                   :win
+                 elsif goals_scored < goals_conceded
+                   :loss
+                 else
+                   :draw
+                 end
+        mt.update!(result: result, score: goals_scored, conceded: goals_conceded, api_data: t)
       end
     end
 
@@ -42,7 +51,7 @@ class Competition < ApplicationRecord
 
   def refresh_teams
     client = CyanideApi::Client.new
-    data = client.teams(competition_name: name, competition_id: api_id, league_id: league.api_id, platform: platform)
+    data = client.teams(competition_name: name, competition_id: api_id, league_id: league.api_id, platform: platform, game_version: league.game_version)
     api_teams = data["teams"] || []
     api_teams.each do |t|
       team = Team.find_or_create_by!(api_id: t["id"].to_s) do |new_team|
@@ -78,9 +87,9 @@ class Competition < ApplicationRecord
   def calculate_standings
     standings = competition_teams.includes(:team).map do |ct|
       matches_played = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id }).count
-      wins = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, score: 1 }).count
-      draws = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, score: 0 }).count
-      losses = matches_played - wins - draws
+      wins = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, result: :win }).count
+      draws = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, result: :draw }).count
+      losses = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, result: :loss }).count
       points = wins * 3 + draws
       ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points)
       { team: ct.team, matches_played: matches_played, wins: wins, draws: draws, losses: losses, points: points }

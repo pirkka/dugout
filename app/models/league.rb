@@ -17,11 +17,16 @@ class League < ApplicationRecord
 
   def refresh_from_api
     client = CyanideApi::Client.new
-    data = client.league(id: api_id)
+    data = client.league(id: api_id, game_version: game_version)
+    league_data = data&.dig('league')
+    unless league_data
+      errors.add(:base, "Invalid API response")
+      return false
+    end
     update!(
-      name: data['league']['name'],
-      slug: data['league']['name'].parameterize,
-      api_id: data['league']['id'] || api_id,
+      name: league_data['name'],
+      slug: league_data['name'].parameterize,
+      api_id: league_data['id'] || api_id,
       api_data: data
     )
     refresh_competitions
@@ -37,7 +42,7 @@ class League < ApplicationRecord
 
   def refresh_competitions
     client = ::CyanideApi::Client.new
-    data = client.competitions(league_id: api_id, league_name: name, platform: platform)
+    data = client.competitions(league_id: api_id, league_name: name, platform: platform, game_version: game_version)
     api_competitions = data["competitions"] || []
 
     api_competitions.each do |comp|

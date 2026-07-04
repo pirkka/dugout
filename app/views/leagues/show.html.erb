@@ -1,5 +1,7 @@
 <h1><%= @league.name %></h1>
 
+<%= link_to 'nuffle', "https://nuffle.xyz/leagues/#{@league.api_id}", target: '_blank' %>
+
 <% if @league.competitions.any? %>
   <ul>
     <% @league.competitions.each do |comp| %>

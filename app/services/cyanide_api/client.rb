@@ -8,62 +8,75 @@ module CyanideApi
   class RateLimitError < Error; end
 
   class Client
-    BASE_URL = "https://web.cyanide-studio.com/ws/bb3".freeze
+    BASE_URL = "https://web.cyanide-studio.com/ws".freeze
 
     def initialize(api_key: nil)
       @api_key = api_key || Rails.application.credentials.cyanide_api_key
     end
 
-    def league(name: nil, id: nil, platform: nil)
-      params = { bb: 3 }
+    private
+
+    def base_url(game_version)
+      "#{BASE_URL}/bb#{api_bb_value(game_version)}"
+    end
+
+    public
+
+    def league(name: nil, id: nil, platform: nil, game_version: :bb3)
+      params = { bb: api_bb_value(game_version) }
       params[:league_name] = name if name
       params[:league_id] = id if id
       params[:platform] = platform if platform
 
-      get("/league/", params)
+      get("/league/", params, game_version)
     end
 
-    def competitions(league_name: nil, league_id: nil, platform: nil)
-      params = { bb: 3 }
-      params[:league_name] = league_name if league_name
+    def competitions(league_name: nil, league_id: nil, platform: nil, game_version: :bb3)
+      params = { bb: api_bb_value(game_version) }
       params[:league_id] = league_id if league_id
       params[:platform] = platform if platform
 
-      get("/competitions/", params)
+      get("/competitions/", params, game_version)
     end
 
-    def teams(competition_name: nil, competition_id: nil, league_name: nil, league_id: nil, platform: nil, limit: nil)
-      params = { bb: 3 }
-      params[:competition_name] = competition_name if competition_name
+    def teams(competition_name: nil, competition_id: nil, league_name: nil, league_id: nil, platform: nil, game_version: :bb3, limit: nil)
+      params = { bb: api_bb_value(game_version) }
       params[:competition_id] = competition_id if competition_id
-      params[:league_name] = league_name if league_name
       params[:league_id] = league_id if league_id
       params[:platform] = platform if platform
       params[:limit] = limit if limit
 
-      get("/teams/", params)
+      get("/teams/", params, game_version)
     end
 
-    def matches(competition_name: nil, competition_id: nil, league_name: nil, league_id: nil, platform: nil, limit: nil, start: nil, end_date: nil)
-      params = { bb: 3, start: Time.now-100.years, limit: 1000 }
-      params[:competition_name] = competition_name if competition_name
+    def matches(competition_name: nil, competition_id: nil, league_name: nil, league_id: nil, platform: nil, game_version: :bb3, limit: nil, start: nil, end_date: nil)
+      params = { bb: api_bb_value(game_version), start: Time.now-100.years, limit: 1000 }
       params[:competition_id] = competition_id if competition_id
-      params[:league_name] = league_name if league_name
       params[:league_id] = league_id if league_id
       params[:platform] = platform if platform
       params[:limit] = limit if limit
       params[:start] = start if start
       params[:end] = end_date if end_date
 
-      get("/matches/", params)
+      get("/matches/", params, game_version)
     end
 
     private
 
-    def get(path, params = {})
+    def api_bb_value(game_version)
+      case game_version.to_s
+      when "bb2" then 2
+      when "bb3" then 3
+      else 3
+      end
+    end
+
+    def get(path, params = {}, game_version = :bb3)
       params[:key] = @api_key
-      uri = URI("#{BASE_URL}#{path}")
+      uri = URI("#{base_url(game_version)}#{path}")
       uri.query = URI.encode_www_form(params) unless params.empty?
+
+      puts uri
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true

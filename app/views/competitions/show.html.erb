@@ -3,6 +3,8 @@
 <p><strong>League:</strong> <%= link_to @competition.league.name, @competition.league %></p>
 <p><strong>Format:</strong> <%= @competition.format %></p>
 <p><strong>Platform:</strong> <%= @competition.platform %></p>
+<%= link_to 'nuffle', "https://nuffle.xyz/leaderboards/#{@competition.api_id}", target: '_blank' %>
+<%= button_to "Refresh", refresh_competition_path(@competition), method: :post %>
 
 <h2>Standings</h2>
 <% if @competition.competition_teams.any? %>
@@ -41,12 +43,14 @@
   <ul>
     <% @competition.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.each do |match| %>
       <% mts = match.match_teams.sort_by(&:id) %>
-      <li>
-        <%= link_to match.started.strftime("%B %d, %Y"), match %>:
-        <%= link_to mts[0].team.name, mts[0].team %>
-        <%= link_to "#{mts[0].score} - #{mts[1].score}", match %>
-        <%= link_to mts[1].team.name, mts[1].team %>
-      </li>
+      <% if mts.size >= 2 && mts[0].team && mts[1].team %>
+        <li>
+          <%= link_to match.started.strftime("%B %d, %Y"), match %>:
+          <%= link_to mts[0].team.name, mts[0].team %>
+          <%= link_to "#{mts[0].score} - #{mts[1].score}", match %>
+          <%= link_to mts[1].team.name, mts[1].team %>
+        </li>
+      <% end %>
     <% end %>
   </ul>
 <% else %>

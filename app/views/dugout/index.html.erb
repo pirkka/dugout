@@ -1,5 +1,7 @@
 <h1>Leagues</h1>
 
+<p><%= link_to "New League", new_league_path %></p>
+
 <% if @leagues_by_letter.any? %>
   <p>
     <% ("A".."Z").each do |letter| %>
@@ -15,7 +17,7 @@
     <h2 id="letter-<%= letter %>"><%= letter %></h2>
     <ul>
       <% leagues.each do |league| %>
-        <li><%= link_to league.name, league %></li>
+        <li><%= link_to league.name, league %> (<%= league.game_version %>)</li>
       <% end %>
     </ul>
   <% end %>
