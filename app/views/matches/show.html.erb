@@ -19,6 +19,11 @@
   <p><strong>Round:</strong> <%= @match.round %></p>
 <% end %>
 
+<p>
+    <b>Debug links:</b>
+    <%= link_to "cyanide match", @match.cyanide_match_uri, target: '_blank' %>
+</p>
+
 <h2>Team Stats</h2>
 <% @match.match_teams.sort_by(&:id).each do |mt| %>
   <h3><%= link_to mt.team.name, mt.team %> (<%= mt.score %> - <%= mt.conceded %>)</h3>

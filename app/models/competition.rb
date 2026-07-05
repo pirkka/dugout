@@ -38,8 +38,8 @@ class Competition < ApplicationRecord
         mt.update!(result: result, score: goals_scored, conceded: goals_conceded, api_data: t)
       end
     end
-
-    calculate_standings
+    remove_duplicate_matches if format != :ladder
+    refresh_standings
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Matches not found on API")
@@ -84,22 +84,60 @@ class Competition < ApplicationRecord
     false
   end
 
-  def calculate_standings
-    standings = competition_teams.includes(:team).map do |ct|
-      matches_played = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id }).count
-      wins = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, result: :win }).count
-      draws = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, result: :draw }).count
-      losses = matches.joins(:match_teams).where(match_teams: { team_id: ct.team_id, result: :loss }).count
+  def remove_duplicate_matches
+    grouped = matches.includes(:match_teams).group_by do |match|
+      match.match_teams.map(&:team_id).sort
+    end
+
+    grouped.each_value do |group|
+      next if group.size <= 1
+      keeper = group.max_by { |m| m.started || Time.at(0) }
+      (group - [keeper]).each(&:destroy)
+    end
+  end
+
+  def refresh_standings
+    client = CyanideApi::Client.new
+    data = client.ladder(competition_name: name, competition_id: api_id, game_version: league.game_version)
+    api_rankings = data["ranking"] || []
+
+    api_rankings.each do |entry|
+      team_data = entry["team"]
+      team = Team.find_by(api_id: team_data["id"])
+      next unless team
+      ct = competition_teams.find_by(team: team)
+      next unless ct
+      wdl = team_data["w/d/l"].split("/").map(&:to_i)
+      wins, draws, losses = wdl[0], wdl[1], wdl[2]
+      matches_played = wins + draws + losses
       points = wins * 3 + draws
-      ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points)
-      { team: ct.team, matches_played: matches_played, wins: wins, draws: draws, losses: losses, points: points }
+      ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points, position: team_data["rank"], api_data: entry)
     end
+    true
+  rescue CyanideApi::NotFoundError
+    errors.add(:base, "Ladder not found on API")
+    false
+  rescue CyanideApi::Error => e
+    errors.add(:base, e.message)
+    false
+  end
 
-    standings.sort_by! { |s| [-s[:points], -s[:wins], s[:losses]] }
+  def cyanide_teams_uri
+    api_key = Rails.application.credentials.cyanide_api_key
+    game_version = league.game_version
+    "https://web.cyanide-studio.com/ws/#{game_version}/teams/?key=#{api_key}&competition_id=#{api_id}"
+  end
 
-    standings.each_with_index do |standing, index|
-      ct = competition_teams.find_by(team: standing[:team])
-      ct.update!(position: index + 1)
-    end
+  def cyanide_standings_uri
+    api_key = Rails.application.credentials.cyanide_api_key
+    game_version = league.game_version
+    numerical_game_version = game_version.gsub('bb', '').to_i
+    "https://web.cyanide-studio.com/ws/#{game_version}/top/?key=#{api_key}&league_id=#{league.api_id}&competition_id=#{api_id}&bb=#{numerical_game_version}"
+  end
+
+  def cyanide_matches_uri
+    api_key = Rails.application.credentials.cyanide_api_key
+    game_version = league.game_version
+    "https://web.cyanide-studio.com/ws/#{game_version}/matches/?key=#{api_key}&competition_id=#{api_id}&start=1980-01-01"
   end
 end

@@ -23,7 +23,7 @@ module CyanideApi
     public
 
     def league(name: nil, id: nil, platform: nil, game_version: :bb3)
-      params = { bb: api_bb_value(game_version) }
+      params = { bb: api_bb_value(game_version), start: Time.now-100.years, limit: 1000 }
       params[:league_name] = name if name
       params[:league_id] = id if id
       params[:platform] = platform if platform
@@ -32,7 +32,7 @@ module CyanideApi
     end
 
     def competitions(league_name: nil, league_id: nil, platform: nil, game_version: :bb3)
-      params = { bb: api_bb_value(game_version) }
+      params = { bb: api_bb_value(game_version), start: Time.now-100.years, limit: 1000 }
       params[:league_id] = league_id if league_id
       params[:platform] = platform if platform
 
@@ -40,7 +40,7 @@ module CyanideApi
     end
 
     def teams(competition_name: nil, competition_id: nil, league_name: nil, league_id: nil, platform: nil, game_version: :bb3, limit: nil)
-      params = { bb: api_bb_value(game_version) }
+      params = { bb: api_bb_value(game_version), start: Time.now-100.years, limit: 1000 }
       params[:competition_id] = competition_id if competition_id
       params[:league_id] = league_id if league_id
       params[:platform] = platform if platform
@@ -59,6 +59,14 @@ module CyanideApi
       params[:end] = end_date if end_date
 
       get("/matches/", params, game_version)
+    end
+
+    def ladder(competition_name: nil, competition_id: nil, game_version: :bb3)
+      params = {}
+      params = { bb: api_bb_value(game_version), start: Time.now-100.years, limit: 1000 }
+      params[:competition_name] = competition_name if competition_name
+      params[:competition_id] = competition_id if competition_id
+      get("/ladder/", params, game_version)
     end
 
     private

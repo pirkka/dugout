@@ -102,5 +102,26 @@ module CyanideApi
     ensure
       Client.define_method(:get, original)
     end
+
+    test "constructs ladder request with competition params" do
+      response = { "ranking" => [{ "team" => { "name" => "Furies", "id" => "abc", "rank" => 1, "w/d/l" => "5/2/1" } }] }
+      original = Client.instance_method(:get)
+      Client.define_method(:get) { |*| response }
+
+      data = @client.ladder(competition_name: "Season 1")
+      assert_equal "Furies", data["ranking"].first["team"]["name"]
+      assert_equal 1, data["ranking"].first["team"]["rank"]
+    ensure
+      Client.define_method(:get, original)
+    end
+
+    test "raises NotFoundError on ladder 404" do
+      original = Client.instance_method(:get)
+      Client.define_method(:get) { |*| raise NotFoundError }
+
+      assert_raises(NotFoundError) { @client.ladder(competition_name: "Unknown") }
+    ensure
+      Client.define_method(:get, original)
+    end
   end
 end

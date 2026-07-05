@@ -3,8 +3,14 @@
 <p><strong>League:</strong> <%= link_to @competition.league.name, @competition.league %></p>
 <p><strong>Format:</strong> <%= @competition.format %></p>
 <p><strong>Platform:</strong> <%= @competition.platform %></p>
+<p><strong>Game:</strong> <%= @competition.league.game_version %></p>
+<p><strong>Debug links:</strong>
 <%= link_to 'nuffle', "https://nuffle.xyz/leaderboards/#{@competition.api_id}", target: '_blank' %>
+<%= link_to 'cyanide teams', @competition.cyanide_teams_uri, target: '_blank' %>
+<%= link_to 'cyanide standings', @competition.cyanide_standings_uri, target: '_blank' %>
+<%= link_to 'cyanide matches', @competition.cyanide_matches_uri, target: '_blank' %>
 <%= button_to "Refresh", refresh_competition_path(@competition), method: :post %>
+</p>
 
 <h2>Standings</h2>
 <% if @competition.competition_teams.any? %>
@@ -13,11 +19,11 @@
       <tr>
         <th>Pos</th>
         <th>Team</th>
-        <th>Pld</th>
-        <th>W</th>
-        <th>L</th>
-        <th>D</th>
-        <th>Pts</th>
+        <th>Played</th>
+        <th>Wins</th>
+        <th>Draws</th>
+        <th>Losses</th>
+        <th>Points</th>
       </tr>
     </thead>
     <tbody>
@@ -27,8 +33,8 @@
           <td><%= link_to ct.team.name, ct.team %></td>
           <td><%= ct.matches %></td>
           <td><%= ct.wins %></td>
-          <td><%= ct.losses %></td>
           <td><%= ct.draws %></td>
+          <td><%= ct.losses %></td>
           <td><%= ct.points %></td>
         </tr>
       <% end %>
@@ -43,14 +49,16 @@
   <ul>
     <% @competition.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.each do |match| %>
       <% mts = match.match_teams.sort_by(&:id) %>
-      <% if mts.size >= 2 && mts[0].team && mts[1].team %>
         <li>
           <%= link_to match.started.strftime("%B %d, %Y"), match %>:
           <%= link_to mts[0].team.name, mts[0].team %>
-          <%= link_to "#{mts[0].score} - #{mts[1].score}", match %>
-          <%= link_to mts[1].team.name, mts[1].team %>
+          <%= link_to "#{mts[0].score} - #{mts[1]&.score}", match %>
+          <% if mts[1] %>
+              <%= link_to mts[1].team.name, mts[1].team %>
+          <% else %>
+            N/A
+          <% end %>
         </li>
-      <% end %>
     <% end %>
   </ul>
 <% else %>
