@@ -1,0 +1,59 @@
+<h1><%= @series.name %></h1>
+
+<div class="debug">
+  <strong>Debug links:</strong>
+  <%= link_to "league: #{@series.league.name}", @series.league %>
+  <%= button_to "Refresh standings", refresh_series_path(@series.slug), method: :post, style: 'display: inline;' %>
+</div>
+
+<h2>Standings</h2>
+<% if @series.series_teams.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Pos</th>
+        <th>Team</th>
+        <th>Pts</th>
+        <th>Pld</th>
+        <th>W</th>
+        <th>D</th>
+        <th>L</th>
+        <th colspan="2" nowrap>TD</th>
+        <th colspan="2" nowrap>Cas</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @series.series_teams.each do |st| %>
+        <tr>
+          <td><%= st.position %></td>
+          <td nowrap><%= link_to st.team.name, st.team %></td>
+          <td><%= st.points %></td>
+          <td><%= st.matches %></td>
+          <td><%= st.wins %></td>
+          <td><%= st.draws %></td>
+          <td><%= st.losses %></td>
+          <td>+<%= st.touchdowns_made %></td>
+          <td>-<%= st.touchdowns_sustained %></td>
+          <td>+<%= st.casualties_made %></td>
+          <td>-<%= st.casualties_sustained %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No standings yet. Click "Refresh standings" to calculate.</p>
+<% end %>
+
+<h2>Competitions</h2>
+<% if @series.competitions.any? %>
+  <ul style="list-style: none; padding-left: 0;">
+    <% @series.competitions.each do |comp| %>
+      <li<%= ' class="inactive"'.html_safe unless comp.competition_teams.any? %>>
+        <%= link_to(comp.name, comp) %>
+        <span><%= comp.format.gsub('_',' ') %></span>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No competitions yet.</p>
+<% end %>

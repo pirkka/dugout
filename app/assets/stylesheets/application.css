@@ -28,7 +28,7 @@ table {
 
 th {
     padding: 6px 10px;
-    text-align: left;
+    text-align: center;
     border-bottom: 2px solid #602900;
 }
 td {
@@ -76,6 +76,7 @@ form.button_to {
     background: #f9f9f9;
     padding: 10px;
     border-radius: 4px;
+    margin: 10px;
 }
 a {
     color: #602900;
@@ -84,4 +85,63 @@ a {
 
 .inactive a {
     color: #777;
+}
+
+.popup-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.popup-menu__trigger {
+    font-size: 14px;
+    padding: 4px 8px;
+    cursor: pointer;
+    background: #602900;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+.popup-menu__dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    min-width: 200px;
+    background: white;
+    border: 1px solid #602900;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-top: 4px;
+}
+
+.popup-menu--visible {
+    display: block;
+}
+
+.popup-menu__dropdown form.button_to {
+    display: block;
+    width: 100%;
+}
+
+.popup-menu__dropdown form.button_to input[type="submit"] {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 14px;
+    color: #602900;
+    text-align: left;
+    cursor: pointer;
+}
+
+.popup-menu__dropdown form.button_to input[type="submit"]:hover {
+    background: #f0e6d3;
+}
+
+nav {
+    font-size: 22px;
 }

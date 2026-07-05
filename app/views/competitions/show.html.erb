@@ -1,16 +1,39 @@
+<div class="debug">
+    <strong>Debug links:</strong>
+    <%= link_to 'nuffle', "https://nuffle.xyz/leaderboards/#{@competition.api_id}", target: '_blank' %>
+    <%= link_to 'cya-teams', @competition.cyanide_teams_uri, target: '_blank' %>
+    <%= link_to 'cya-standings', @competition.cyanide_standings_uri, target: '_blank' %>
+    <%= link_to 'cya-matches', @competition.cyanide_matches_uri, target: '_blank' %>
+    <%= link_to 'cya-contests', @competition.cyanide_contests_uri, target: '_blank' %>
+    <%= button_to "Refresh", refresh_competition_path(@competition), method: :post, style: 'display: inline;' %>
+</div>
+
+
 <h1><%= @competition.name %>
 
-<span><%= @competition.format %></span>
+<span><%= @competition.format.gsub('_', ' ') %></span>
 <span><%= @competition.platform %></span>
 <span><%= @competition.league.game_version %></span>
 </h1>
-<div class="debug">
-<strong>Debug links:</strong>
-<%= link_to 'nuffle', "https://nuffle.xyz/leaderboards/#{@competition.api_id}", target: '_blank' %>
-<%= link_to 'cya-teams', @competition.cyanide_teams_uri, target: '_blank' %>
-<%= link_to 'cya-standings', @competition.cyanide_standings_uri, target: '_blank' %>
-<%= link_to 'cya-matches', @competition.cyanide_matches_uri, target: '_blank' %>
-<%= button_to "Refresh", refresh_competition_path(@competition), method: :post, style: 'display: inline;' %>
+
+<div class="popup-menu" data-controller="popup-menu">
+  <button class="popup-menu__trigger" data-action="click->popup-menu#toggle">
+    <% if @competition.series %>
+    Switch Series (<%= @competition.series.name %>)
+    <% else %>
+    Add To Series
+    <% end %>
+  </button>
+  <div class="popup-menu__dropdown" data-popup-menu-target="menu">
+    <% @series_list.each do |series| %>
+      <%= button_to series.name, add_competition_to_series_path(@competition, series_id: series.id), method: :post %>
+    <% end %>
+    <hr style="margin: 4px 0; border: none; border-top: 1px solid #602900;">
+    <%= form_tag add_competition_to_series_path(@competition), method: :post, style: "padding: 4px;" do %>
+      <%= text_field_tag :new_series_name, nil, placeholder: "New series name", style: "width: 100%; box-sizing: border-box; font-family: Verdana; font-size: 13px; padding: 4px;" %>
+      <%= submit_tag "Create & Add", style: "width: 100%; margin-top: 4px; font-family: Verdana; font-size: 13px; padding: 4px; cursor: pointer;" %>
+    <% end %>
+  </div>
 </div>
 
 <h2>Standings</h2>
@@ -20,11 +43,13 @@
       <tr>
         <th>Pos</th>
         <th>Team</th>
-        <th>Played</th>
-        <th>Wins</th>
-        <th>Draws</th>
-        <th>Losses</th>
-        <th>Points</th>
+        <th>Pts</th>
+        <th>Pld</th>
+        <th>W</th>
+        <th>D</th>
+        <th>L</th>
+        <th colspan="2" nowrap>TD</th>
+        <th colspan="2" nowrap>Cas</th>
       </tr>
     </thead>
     <tbody>
@@ -32,11 +57,15 @@
         <tr>
           <td><%= ct.position %></td>
           <td nowrap><%= link_to ct.team.name, ct.team %></td>
+          <td><%= ct.points %></td>
           <td><%= ct.matches %></td>
           <td><%= ct.wins %></td>
           <td><%= ct.draws %></td>
           <td><%= ct.losses %></td>
-          <td><%= ct.points %></td>
+          <td>+<%= ct.touchdowns_made %></td>
+          <td>-<%= ct.touchdowns_sustained %></td>
+          <td>+<%= ct.casualties_made %></td>
+          <td>-<%= ct.casualties_sustained %></td>
         </tr>
       <% end %>
     </tbody>

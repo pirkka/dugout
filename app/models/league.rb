@@ -1,4 +1,5 @@
 class League < ApplicationRecord
+  has_many :series, dependent: :destroy
   has_many :competitions
 
   def to_param
@@ -62,5 +63,11 @@ class League < ApplicationRecord
   rescue CyanideApi::Error => e
     errors.add(:base, e.message)
     false
+  end
+
+  def cyanide_uri
+    api_key = Rails.application.credentials.cyanide_api_key
+    game_number = game_version.gsub('bb', '')
+    "https://web.cyanide-studio.com/ws/#{game_version}/league/?key=#{api_key}&league=#{api_id}&bb=#{game_number}"
   end
 end

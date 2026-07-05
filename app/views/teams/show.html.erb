@@ -10,9 +10,10 @@
         <% opp_mt = match.match_teams.find { |mt| mt.team_id != @team.id } %>
         <li>
           <%= link_to match.started&.strftime("%B %d, %Y") || "TBD", match %>:
+          <%= link_to our_mt.team.name, our_mt.team %>
+          <%= link_to "#{our_mt&.score} - #{opp_mt.score}", match %>
           <% if opp_mt %>
             <%= link_to opp_mt.team.name, opp_mt.team %>
-            <%= link_to "#{our_mt&.score} - #{opp_mt.score}", match %>
           <% else %>
             vs TBD
           <% end %>

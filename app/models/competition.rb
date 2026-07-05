@@ -1,5 +1,6 @@
 class Competition < ApplicationRecord
   belongs_to :league
+  belongs_to :series, optional: true
   has_many :competition_teams, -> { order(position: :asc) }, dependent: :destroy
   has_many :teams, through: :competition_teams
   has_many :matches, dependent: :destroy
@@ -41,6 +42,7 @@ class Competition < ApplicationRecord
     remove_duplicate_matches if format != :ladder
     refresh_standings if league.game_version.to_sym == :bb3
     calculate_standings if league.game_version.to_sym == :bb2
+    calculate_team_stats
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Matches not found on API")
@@ -123,6 +125,17 @@ class Competition < ApplicationRecord
     false
   end
 
+  def calculate_team_stats
+    competition_teams.each do |ct|
+      mts = MatchTeam.joins(:match).where(matches: { competition_id: id }, team_id: ct.team_id)
+      touchdowns_made = mts.sum(:score)
+      touchdowns_sustained = mts.sum(:conceded)
+      casualties_made = mts.sum { |mt| mt.api_data&.dig("inflictedcasualties") || 0 }
+      casualties_sustained = mts.sum { |mt| mt.api_data&.dig("sustainedcasualties") || 0 }
+      ct.update!(touchdowns_made: touchdowns_made, touchdowns_sustained: touchdowns_sustained, casualties_made: casualties_made, casualties_sustained: casualties_sustained)
+    end
+  end
+
   def calculate_standings
     standings = competition_teams.map do |ct|
       mts = MatchTeam.joins(:match).where(matches: { competition_id: id }, team_id: ct.team_id)
@@ -165,5 +178,11 @@ class Competition < ApplicationRecord
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = league.game_version
     "https://web.cyanide-studio.com/ws/#{game_version}/matches/?key=#{api_key}&competition_id=#{api_id}&start=1980-01-01"
+  end
+
+  def cyanide_contests_uri
+    api_key = Rails.application.credentials.cyanide_api_key
+    game_version = league.game_version
+    "https://web.cyanide-studio.com/ws/#{game_version}/contests/?key=#{api_key}&competition_id=#{api_id}&round=1&status=Validated"
   end
 end

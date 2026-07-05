@@ -1,0 +1,19 @@
+rebbl_season_15_cackling_furies:
+  series: rebbl_season_15
+  team: cackling_furies
+  matches: 10
+  wins: 7
+  draws: 2
+  losses: 1
+  points: 23
+  position: 1
+
+rebbl_season_15_razorback_raiders:
+  series: rebbl_season_15
+  team: razorback_raiders
+  matches: 10
+  wins: 6
+  draws: 1
+  losses: 3
+  points: 19
+  position: 2

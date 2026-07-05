@@ -28,15 +28,6 @@
   </head>
 
   <body style="background-image: url('<%= image_path('parchment-bg.jpg') %>'); background-size: 100% auto; background-repeat: repeat-y;">
-    <nav>
-      <%= link_to "Home", root_path %>
-      <% if @league %>
-        &gt; <%= link_to @league.name, @league %>
-      <% end %>
-      <% if @competition %>
-        &gt; <%= link_to @competition.name, @competition %>
-      <% end %>
-    </nav>
 
     <% if notice %>
       <p style="background: #d4edda; padding: 10px; margin: 0;"><%= notice %></p>
@@ -51,7 +42,18 @@
     <% end %>
 
     <main class="container">
-      <%= yield %>
+        <nav>
+          <%= link_to "Home", root_path %>
+          <% if @league %>
+            &gt; <%= link_to @league.name, @league %>
+          <% end %>
+          <% if @competition %>
+            &gt; <%= link_to @competition.name, @competition %>
+          <% end %>
+        </nav>
+
+
+        <%= yield %>
     </main>
   </body>
 </html>

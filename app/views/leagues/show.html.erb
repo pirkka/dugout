@@ -1,9 +1,23 @@
-<h1><%= @league.name %><span class="game-version game-version-<%= @league.game_version %>"><%= @league.game_version %></span></h1>
-
 <div class="debug">
     <b>Debug links:</b>
-<%= link_to 'nuffle', "https://nuffle.xyz/leagues/#{@league.api_id}", target: '_blank' %>
+    <%= link_to 'nuffle', "https://nuffle.xyz/leagues/#{@league.api_id}", target: '_blank' %>
+    <%= link_to 'cyanide', @league.cyanide_uri, target: '_blank' %>
 </div>
+
+<h1><%= @league.name %><span class="game-version game-version-<%= @league.game_version %>"><%= @league.game_version %></span></h1>
+
+<% if @league.series.any? %>
+  <h2>Series</h2>
+  <ul style="list-style: none; padding-left: 0;">
+    <% @league.series.each do |series| %>
+      <li>
+        <%= link_to series.name, series_path(series.slug) %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<h2>Competitions</h2>
 <% if @league.competitions.any? %>
   <ul style="list-style: none; padding-left: 0;">
     <% @league.competitions.each do |comp| %>

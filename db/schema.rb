@@ -10,9 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_164436) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_06_000004) do
   create_table "competition_teams", force: :cascade do |t|
     t.json "api_data"
+    t.integer "casualties_made"
+    t.integer "casualties_sustained"
     t.integer "competition_id", null: false
     t.datetime "created_at", null: false
     t.integer "draws"
@@ -21,6 +23,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_164436) do
     t.integer "points"
     t.integer "position"
     t.integer "team_id", null: false
+    t.integer "touchdowns_made"
+    t.integer "touchdowns_sustained"
     t.datetime "updated_at", null: false
     t.integer "wins"
     t.index ["competition_id", "team_id"], name: "index_competition_teams_on_competition_id_and_team_id", unique: true
@@ -36,9 +40,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_164436) do
     t.integer "league_id", null: false
     t.string "name", null: false
     t.integer "platform", null: false
+    t.integer "series_id"
     t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.index ["api_id"], name: "index_competitions_on_api_id"
+    t.index ["series_id"], name: "index_competitions_on_series_id"
   end
 
   create_table "leagues", force: :cascade do |t|
@@ -80,6 +86,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_164436) do
     t.index ["competition_id"], name: "index_matches_on_competition_id"
   end
 
+  create_table "series", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "league_id", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["league_id"], name: "index_series_on_league_id"
+  end
+
+  create_table "series_teams", force: :cascade do |t|
+    t.json "api_data"
+    t.integer "casualties_made"
+    t.integer "casualties_sustained"
+    t.datetime "created_at", null: false
+    t.integer "draws"
+    t.integer "losses"
+    t.integer "matches"
+    t.integer "points"
+    t.integer "position"
+    t.integer "series_id", null: false
+    t.integer "team_id", null: false
+    t.integer "touchdowns_made"
+    t.integer "touchdowns_sustained"
+    t.datetime "updated_at", null: false
+    t.integer "wins"
+    t.index ["series_id", "team_id"], name: "index_series_teams_on_series_id_and_team_id", unique: true
+    t.index ["series_id"], name: "index_series_teams_on_series_id"
+    t.index ["team_id"], name: "index_series_teams_on_team_id"
+  end
+
   create_table "teams", force: :cascade do |t|
     t.json "api_data"
     t.string "api_id"
@@ -101,7 +137,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_164436) do
 
   add_foreign_key "competition_teams", "competitions"
   add_foreign_key "competition_teams", "teams"
+  add_foreign_key "competitions", "series"
   add_foreign_key "match_teams", "matches"
   add_foreign_key "match_teams", "teams"
   add_foreign_key "matches", "competitions"
+  add_foreign_key "series", "leagues"
+  add_foreign_key "series_teams", "series"
+  add_foreign_key "series_teams", "teams"
 end
