@@ -1,39 +1,87 @@
 body {
-  font-family: Verdana, sans-serif;
-  background: white;
-  color: black;
-  margin: 0;
+    font-family: Verdana, sans-serif;
+    background: white;
+    color: #602900;
+    margin: 0;
+    font-family: "Jacquard 24", system-ui;
+    font-family: "MedievalSharp";
+    font-weight: 400;
+    font-style: normal;
+    font-size: 34px;
 }
 
 a {
-  color: black;
-  text-decoration: none;
+    color: black;
+    text-decoration: none;
 }
 
 .container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px;
 }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
+    width: 100%;
+    border-collapse: collapse;
 }
 
-th, td {
-  padding: 6px 10px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+th {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 2px solid #602900;
+}
+td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 0px dashed #602900;
 }
 
 @media (max-width: 600px) {
-  th, td {
-    padding: 4px 6px;
-    font-size: 14px;
-  }
+    th,
+    td {
+        padding: 4px 6px;
+        font-size: 14px;
+    }
 }
 
 ul {
-  padding-left: 20px;
+    padding-left: 0px;
+    list-style: none;
+}
+
+li {
+    text-decoration: none;
+}
+
+span {
+    background-color: #602900;
+    color: white;
+    padding: 3px;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-family: "MedievalSharp", system-ui;
+    border-radius: 4px;
+    padding-bottom: 1px;
+    vertical-align: 3px;
+}
+
+form.button_to {
+    display: inline;
+}
+
+.debug {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 14px;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 4px;
+}
+a {
+    color: #602900;
+    text-decoration: none;
+}
+
+.inactive a {
+    color: #777;
 }

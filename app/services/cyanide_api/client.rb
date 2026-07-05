@@ -63,7 +63,7 @@ module CyanideApi
 
     def ladder(competition_name: nil, competition_id: nil, game_version: :bb3)
       params = {}
-      params = { bb: api_bb_value(game_version), start: Time.now-100.years, limit: 1000 }
+      params = { bb: api_bb_value(game_version)}
       params[:competition_name] = competition_name if competition_name
       params[:competition_id] = competition_id if competition_id
       get("/ladder/", params, game_version)

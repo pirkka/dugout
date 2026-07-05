@@ -1,11 +1,16 @@
-<h1><%= @league.name %></h1>
+<h1><%= @league.name %><span class="game-version game-version-<%= @league.game_version %>"><%= @league.game_version %></span></h1>
 
+<div class="debug">
+    <b>Debug links:</b>
 <%= link_to 'nuffle', "https://nuffle.xyz/leagues/#{@league.api_id}", target: '_blank' %>
-
+</div>
 <% if @league.competitions.any? %>
-  <ul>
+  <ul style="list-style: none; padding-left: 0;">
     <% @league.competitions.each do |comp| %>
-      <li><%= link_to comp.name, comp %> (<%= comp.format %>)</li>
+      <li<%= ' class="inactive"'.html_safe unless comp.competition_teams.any? %>>
+        <%= link_to(comp.name, comp) %>
+        <span><%= comp.format.gsub('_',' ') %></span>
+      </li>
     <% end %>
   </ul>
 <% else %>

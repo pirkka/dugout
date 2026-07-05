@@ -12,7 +12,7 @@ class CompetitionsController < ApplicationController
     @competition = Competition.find_by(slug: params[:slug])
     if @competition.nil?
       redirect_to root_path, alert: "Competition not found"
-    elsif @competition.refresh_teams && @competition.refresh_matches
+    elsif @competition.refresh_teams && @competition.refresh_matches && @competition.refresh_standings
       redirect_back fallback_location: @competition, notice: "Competition refreshed"
     else
       redirect_back fallback_location: @competition, alert: "Refresh failed"

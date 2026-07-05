@@ -39,7 +39,8 @@ class Competition < ApplicationRecord
       end
     end
     remove_duplicate_matches if format != :ladder
-    refresh_standings
+    refresh_standings if league.game_version.to_sym == :bb3
+    calculate_standings if league.game_version.to_sym == :bb2
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Matches not found on API")
@@ -98,7 +99,7 @@ class Competition < ApplicationRecord
 
   def refresh_standings
     client = CyanideApi::Client.new
-    data = client.ladder(competition_name: name, competition_id: api_id, game_version: league.game_version)
+    data = client.ladder(competition_id: api_id, game_version: league.game_version)
     api_rankings = data["ranking"] || []
 
     api_rankings.each do |entry|
@@ -122,6 +123,31 @@ class Competition < ApplicationRecord
     false
   end
 
+  def calculate_standings
+    standings = competition_teams.map do |ct|
+      mts = MatchTeam.joins(:match).where(matches: { competition_id: id }, team_id: ct.team_id)
+      wins = mts.win.count
+      draws = mts.draw.count
+      losses = mts.loss.count
+      matches_played = wins + draws + losses
+      points = wins * 3 + draws
+      { ct: ct, matches: matches_played, wins: wins, draws: draws, losses: losses, points: points }
+    end
+
+    standings.sort_by! { |s| [-s[:points], -s[:wins]] }
+
+    standings.each_with_index do |s, i|
+      s[:ct].update!(
+        matches: s[:matches],
+        wins: s[:wins],
+        draws: s[:draws],
+        losses: s[:losses],
+        points: s[:points],
+        position: i + 1
+      )
+    end
+  end
+
   def cyanide_teams_uri
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = league.game_version
@@ -132,7 +158,7 @@ class Competition < ApplicationRecord
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = league.game_version
     numerical_game_version = game_version.gsub('bb', '').to_i
-    "https://web.cyanide-studio.com/ws/#{game_version}/top/?key=#{api_key}&league_id=#{league.api_id}&competition_id=#{api_id}&bb=#{numerical_game_version}"
+    "https://web.cyanide-studio.com/ws/#{game_version}/ladder/?key=#{api_key}&competition_id=#{api_id}&bb=#{numerical_game_version}"
   end
 
   def cyanide_matches_uri

@@ -18,13 +18,25 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap" rel="stylesheet">
+
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <p><%= link_to "Home", root_path %></p>
+  <body style="background-image: url('<%= image_path('parchment-bg.jpg') %>'); background-size: 100% auto; background-repeat: repeat-y;">
+    <nav>
+      <%= link_to "Home", root_path %>
+      <% if @league %>
+        &gt; <%= link_to @league.name, @league %>
+      <% end %>
+      <% if @competition %>
+        &gt; <%= link_to @competition.name, @competition %>
+      <% end %>
+    </nav>
 
     <% if notice %>
       <p style="background: #d4edda; padding: 10px; margin: 0;"><%= notice %></p>

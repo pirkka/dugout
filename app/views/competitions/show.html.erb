@@ -1,16 +1,17 @@
-<h1><%= @competition.name %></h1>
+<h1><%= @competition.name %>
 
-<p><strong>League:</strong> <%= link_to @competition.league.name, @competition.league %></p>
-<p><strong>Format:</strong> <%= @competition.format %></p>
-<p><strong>Platform:</strong> <%= @competition.platform %></p>
-<p><strong>Game:</strong> <%= @competition.league.game_version %></p>
-<p><strong>Debug links:</strong>
+<span><%= @competition.format %></span>
+<span><%= @competition.platform %></span>
+<span><%= @competition.league.game_version %></span>
+</h1>
+<div class="debug">
+<strong>Debug links:</strong>
 <%= link_to 'nuffle', "https://nuffle.xyz/leaderboards/#{@competition.api_id}", target: '_blank' %>
-<%= link_to 'cyanide teams', @competition.cyanide_teams_uri, target: '_blank' %>
-<%= link_to 'cyanide standings', @competition.cyanide_standings_uri, target: '_blank' %>
-<%= link_to 'cyanide matches', @competition.cyanide_matches_uri, target: '_blank' %>
-<%= button_to "Refresh", refresh_competition_path(@competition), method: :post %>
-</p>
+<%= link_to 'cya-teams', @competition.cyanide_teams_uri, target: '_blank' %>
+<%= link_to 'cya-standings', @competition.cyanide_standings_uri, target: '_blank' %>
+<%= link_to 'cya-matches', @competition.cyanide_matches_uri, target: '_blank' %>
+<%= button_to "Refresh", refresh_competition_path(@competition), method: :post, style: 'display: inline;' %>
+</div>
 
 <h2>Standings</h2>
 <% if @competition.competition_teams.any? %>
@@ -30,7 +31,7 @@
       <% @competition.competition_teams.includes(:team).each do |ct| %>
         <tr>
           <td><%= ct.position %></td>
-          <td><%= link_to ct.team.name, ct.team %></td>
+          <td nowrap><%= link_to ct.team.name, ct.team %></td>
           <td><%= ct.matches %></td>
           <td><%= ct.wins %></td>
           <td><%= ct.draws %></td>
