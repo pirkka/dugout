@@ -5,6 +5,7 @@
     <%= link_to 'cya-standings', @competition.cyanide_standings_uri, target: '_blank' %>
     <%= link_to 'cya-matches', @competition.cyanide_matches_uri, target: '_blank' %>
     <%= link_to 'cya-contests', @competition.cyanide_contests_uri, target: '_blank' %>
+    <%= link_to 'cya-coaches', @competition.cyanide_coaches_uri, target: '_blank' %>
     <%= button_to "Refresh", refresh_competition_path(@competition), method: :post, style: 'display: inline;' %>
 </div>
 

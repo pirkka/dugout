@@ -1,0 +1,9 @@
+furies_coach:
+  name: Furies Coach
+  slug: furies-coach
+  api_id: "1"
+
+raiders_coach:
+  name: Raiders Coach
+  slug: raiders-coach
+  api_id: "2"

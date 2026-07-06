@@ -5,6 +5,7 @@ class TeamsController < ApplicationController
       render file: "#{Rails.root}/public/404.html", status: :not_found
     else
       @league = @team.competitions.first&.league
+      @competition = @team.competitions.first
     end
   end
 end

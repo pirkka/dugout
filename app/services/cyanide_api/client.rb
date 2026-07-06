@@ -69,6 +69,11 @@ module CyanideApi
       get("/ladder/", params, game_version)
     end
 
+    def team(team_id:, game_version: :bb3)
+      params = { bb: api_bb_value(game_version) }
+      get("/team/#{team_id}/", params, game_version)
+    end
+
     private
 
     def api_bb_value(game_version)

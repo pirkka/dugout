@@ -10,7 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_06_000006) do
+  create_table "coaches", force: :cascade do |t|
+    t.string "api_id"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "competition_teams", force: :cascade do |t|
     t.json "api_data"
     t.integer "casualties_made"
@@ -117,6 +125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_000004) do
   end
 
   create_table "teams", force: :cascade do |t|
+    t.integer "api_coach_id"
     t.json "api_data"
     t.string "api_id"
     t.integer "apothecary"
@@ -133,6 +142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_000004) do
     t.datetime "updated_at", null: false
     t.integer "value"
     t.index ["api_id"], name: "index_teams_on_api_id"
+    t.index ["coach_id"], name: "index_teams_on_coach_id"
   end
 
   add_foreign_key "competition_teams", "competitions"
@@ -144,4 +154,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_000004) do
   add_foreign_key "series", "leagues"
   add_foreign_key "series_teams", "series"
   add_foreign_key "series_teams", "teams"
+  add_foreign_key "teams", "coaches"
 end

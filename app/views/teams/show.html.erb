@@ -1,3 +1,10 @@
+<div class="debug">
+    <strong>Debug links:</strong>
+    <%= link_to 'nuffle', "https://nuffle.xyz/teams/#{@team.api_id}", target: '_blank' %>
+    <%= link_to 'cyanide', @team.cyanide_uri, target: '_blank' %>
+</div>
+
+
 <h1><%= @team.name %></h1>
 
 <% if @team.matches.any? %>
@@ -11,8 +18,8 @@
         <li>
           <%= link_to match.started&.strftime("%B %d, %Y") || "TBD", match %>:
           <%= link_to our_mt.team.name, our_mt.team %>
-          <%= link_to "#{our_mt&.score} - #{opp_mt.score}", match %>
           <% if opp_mt %>
+            <%= link_to "#{our_mt.score} - #{opp_mt.score}", match %>
             <%= link_to opp_mt.team.name, opp_mt.team %>
           <% else %>
             vs TBD

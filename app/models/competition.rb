@@ -72,7 +72,7 @@ class Competition < ApplicationRecord
         cheerleaders: t["cheerleaders"],
         popularity: t["popularity"],
         logo: t["logo"],
-        coach_id: t["coach_id"],
+        api_coach_id: t["coach_id"],
         api_data: t
       )
       competition_teams.find_or_create_by!(team: team)
@@ -183,6 +183,12 @@ class Competition < ApplicationRecord
   def cyanide_contests_uri
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = league.game_version
-    "https://web.cyanide-studio.com/ws/#{game_version}/contests/?key=#{api_key}&competition_id=#{api_id}&round=1&status=Validated"
+    "https://web.cyanide-studio.com/ws/#{game_version}/contests/?key=#{api_key}&league_id=#{league.api_id}&competition_id=#{api_id}&status=*&limit=1000"
+  end
+
+  def cyanide_coaches_uri
+    api_key = Rails.application.credentials.cyanide_api_key
+    game_version = league.game_version
+    "https://web.cyanide-studio.com/ws/#{game_version}/coaches/?key=#{api_key}&league_id=#{league.api_id}&competition_id=#{api_id}&status=*&limit=1000"
   end
 end
