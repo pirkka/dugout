@@ -1,6 +1,6 @@
 class League < ApplicationRecord
   has_many :series, dependent: :destroy
-  has_many :competitions
+  has_many :competitions, -> { order(created_at: :desc) }
 
   def to_param
     slug

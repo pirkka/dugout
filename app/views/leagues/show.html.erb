@@ -2,6 +2,7 @@
     <b>Debug links:</b>
     <%= link_to 'nuffle', "https://nuffle.xyz/leagues/#{@league.api_id}", target: '_blank' %>
     <%= link_to 'cyanide', @league.cyanide_uri, target: '_blank' %>
+    <%= button_to "Refresh", refresh_league_path(@league), method: :post, style: 'display: inline;' %>
 </div>
 
 <h1>
