@@ -19,8 +19,13 @@ Rails.application.routes.draw do
   post 'leagues/:slug/series' => 'series#create', as: :league_series
   post 'series/:slug/refresh' => 'series#refresh', as: :refresh_series
   get 'competitions/:slug' => 'competitions#show', as: :competition
+  get 'coaches/:slug' => 'coaches#show', as: :coach
   get 'teams/:slug' => 'teams#show', as: :team
+  post 'teams/:slug/refresh' => 'teams#refresh', as: :refresh_team
   get 'matches/:id' => 'matches#show', as: :match
+  get 'matches/:id/replay' => 'matches#replay', as: :match_replay
+  post 'matches/:id/upload_replay' => 'matches#upload_replay', as: :upload_replay_match
+  post 'matches/:id/parse_replay' => 'matches#parse_replay', as: :parse_replay_match
   post 'leagues/:slug/refresh' => 'leagues#refresh', as: :refresh_league
   post 'competitions/:slug/refresh' => 'competitions#refresh', as: :refresh_competition
   post 'competitions/:slug/add_to_series' => 'competitions#add_to_series', as: :add_competition_to_series

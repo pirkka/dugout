@@ -201,8 +201,8 @@ class CompetitionTest < ActiveSupport::TestCase
 
     api_response = {
       "ranking" => [
-        { "team" => { "id" => "id-101", "name" => "Cackling Furies", "rank" => 1, "w/d/l" => "6/1/1" } },
-        { "team" => { "id" => "id-102", "name" => "Razorback Raiders", "rank" => 2, "w/d/l" => "4/2/3" } }
+        { "team" => { "id" => "id-101", "name" => "Cackling Furies", "rank" => 1, "w/d/l" => "6/1/1" }, "score" => 1850 },
+        { "team" => { "id" => "id-102", "name" => "Razorback Raiders", "rank" => 2, "w/d/l" => "4/2/3" }, "score" => 1720 }
       ]
     }
     original = CyanideApi::Client.instance_method(:ladder)
@@ -217,6 +217,7 @@ class CompetitionTest < ActiveSupport::TestCase
     assert_equal 1, ct1.draws
     assert_equal 1, ct1.losses
     assert_equal 19, ct1.points
+    assert_equal 1850, ct1.score
 
     ct2.reload
     assert_equal 2, ct2.position
@@ -225,6 +226,7 @@ class CompetitionTest < ActiveSupport::TestCase
     assert_equal 2, ct2.draws
     assert_equal 3, ct2.losses
     assert_equal 14, ct2.points
+    assert_equal 1720, ct2.score
   ensure
     CyanideApi::Client.define_method(:ladder, original)
   end

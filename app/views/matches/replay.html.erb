@@ -1,0 +1,111 @@
+<% replay = @match.replay_json %>
+<% info = replay["info"] %>
+<% game = replay["game"] %>
+<% teams = info["teams"] %>
+<% players = info["players"] %>
+
+<h1>Replay: <%= teams.values.map { |t| t["name"] }.compact.join(" vs ") %></h1>
+
+<p>
+  <%= link_to "Back to match", @match %> |
+  <%= link_to "cyanide match", @match.cyanide_match_uri, target: '_blank' %>
+</p>
+
+<table>
+  <tr><th>Team</th><th>Coach</th><th>Score</th></tr>
+  <% teams.sort_by { |id, _| id }.each do |id, t| %>
+    <tr>
+      <td><%= t["name"] %></td>
+      <td><%= t["coach_name"] %></td>
+      <td><%= t["score"] %></td>
+    </tr>
+  <% end %>
+</table>
+
+<% game["halves"].each do |half| %>
+  <h2>Half <%= half["half_number"] %></h2>
+
+  <% half["turns"].each do |turn| %>
+    <% turn["team_turns"].each do |tt| %>
+      <% team_name = teams.dig(tt["team"], "name") || "Team #{tt["team"]}" %>
+      <h3>Turn <%= turn["turn_number"] %> — <%= team_name %></h3>
+
+      <% events = tt["events"].reject { |e| e["type"] == "turn" } %>
+      <% if events.any? %>
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Player</th>
+              <th>Target</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% events.each do |ev| %>
+              <% pname = players.dig(ev["player"], "name") || ev["player"] %>
+              <% tname = players.dig(ev["target"], "name") || ev["target"] %>
+              <tr>
+                <td><%= ev["type"] %></td>
+                <td><%= pname %></td>
+                <td><%= tname %></td>
+                <td>
+                  <% case ev["type"]
+                     when "block" %>
+                    <%= ev["outcome"]&.tr("_", " ") %>
+                  <% when "touchdown" %>
+                    TD!
+                  <% when "move" %>
+                    <%= ev["from"] %> → <%= ev["to"] %>
+                  <% when "injury", "removal" %>
+                    <%= ev["outcome"]&.tr("_", " ") %>
+                  <% when "armour" %>
+                    <%= ev["success"] ? "success" : "fail" %>
+                  <% when "pass", "catch", "handoff", "pickup", "dodge", "go_for_it" %>
+                    <%= ev["success"] ? "success" : "fail" %>
+                  <% when "skill" %>
+                    <%= ev["skill"] %>
+                  <% when "reroll" %>
+                    team reroll used
+                  <% when "foul" %>
+                    foul
+                  <% when "sent_off" %>
+                    sent off!
+                  <% when "casualty" %>
+                    casualty roll
+                  <% when "stunned" %>
+                    face up
+                  <% else %>
+                    <%= ev.except("type", "player", "target", "index").inspect %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if players.any? %>
+  <h2>Players</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Number</th>
+        <th>Name</th>
+        <th>Team</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% players.sort_by { |id, p| [p["team"].to_s, p["number"].to_i] }.each do |id, p| %>
+        <tr>
+          <td><%= p["number"] %></td>
+          <td><%= p["name"] %></td>
+          <td><%= teams.dig(p["team"], "name") || p["team"] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

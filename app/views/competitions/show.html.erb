@@ -9,7 +9,6 @@
     <%= button_to "Refresh", refresh_competition_path(@competition), method: :post, style: 'display: inline;' %>
 </div>
 
-
 <h1><%= @competition.name %>
 
 <span><%= @competition.format.gsub('_', ' ') %></span>
@@ -42,8 +41,9 @@
   <table>
     <thead>
       <tr>
-        <th>Pos</th>
+        <th></th>
         <th>Team</th>
+        <th></th>
         <th>Pts</th>
         <th>Pld</th>
         <th>W</th>
@@ -57,8 +57,12 @@
       <% @competition.competition_teams.includes(:team).each do |ct| %>
         <tr>
           <td><%= ct.position %></td>
-          <td nowrap><%= link_to ct.team.name, ct.team %></td>
-          <td><%= ct.points %></td>
+          <td nowrap>
+            <%= link_to ct.team.name, ct.team %> <span><%= ct.team.race %></span></td>
+          <td>
+            <%= image_tag ct.team.logo_url, alt: ct.team.name, width: 32, height: 32 %>
+          </td>
+          <td><%= @competition.format == :ladder ? ct.score : ct.points %></td>
           <td><%= ct.matches %></td>
           <td><%= ct.wins %></td>
           <td><%= ct.draws %></td>

@@ -13,6 +13,7 @@
       <tr>
         <th>Pos</th>
         <th>Team</th>
+        <th></th>
         <th>Pts</th>
         <th>Pld</th>
         <th>W</th>
@@ -27,6 +28,9 @@
         <tr>
           <td><%= st.position %></td>
           <td nowrap><%= link_to st.team.name, st.team %></td>
+          <td>
+            <%= image_tag st.team.logo_url, alt: 'logo', width: 32, height: 32 %>
+          </td>
           <td><%= st.points %></td>
           <td><%= st.matches %></td>
           <td><%= st.wins %></td>

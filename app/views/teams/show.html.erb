@@ -2,10 +2,20 @@
     <strong>Debug links:</strong>
     <%= link_to 'nuffle', "https://nuffle.xyz/teams/#{@team.api_id}", target: '_blank' %>
     <%= link_to 'cyanide', @team.cyanide_uri, target: '_blank' %>
+    <%= button_to "Refresh", refresh_team_path(@team), method: :post, style: 'display: inline;' %>
 </div>
+<%= image_tag @team.logo_url, alt: "#{@team.name} logo", style: "max-width: 140px; max-height: 140px; float: right; margin-top: 30px;" if @team.logo_url %>
 
+<h1>
+    <%= @team.name %>
 
-<h1><%= @team.name %></h1>
+    <span><%= @team.platform %></span>
+    <span><%= @team.game_version %></span>
+
+</h1>
+
+Coach: <%= link_to @team.coach.name, @team.coach if @team.coach %>
+Race: <%= @team.race %>
 
 <% if @team.matches.any? %>
   <% matches_by_comp = @team.matches.includes(:competition).group_by(&:competition) %>

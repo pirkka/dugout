@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_000006) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_06_091252) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -30,6 +30,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_000006) do
     t.integer "matches"
     t.integer "points"
     t.integer "position"
+    t.integer "score"
     t.integer "team_id", null: false
     t.integer "touchdowns_made"
     t.integer "touchdowns_sustained"
@@ -87,6 +88,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_000006) do
     t.integer "competition_id", null: false
     t.datetime "created_at", null: false
     t.datetime "finished"
+    t.binary "replay_data"
+    t.string "replay_file_name"
+    t.json "replay_json"
     t.integer "round"
     t.datetime "started"
     t.datetime "updated_at", null: false
@@ -134,10 +138,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_000006) do
     t.integer "cheerleaders"
     t.integer "coach_id"
     t.datetime "created_at", null: false
+    t.datetime "established"
     t.string "logo"
     t.string "name", null: false
     t.integer "popularity"
+    t.string "race"
     t.integer "rerolls"
+    t.string "slogan"
     t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.integer "value"

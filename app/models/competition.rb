@@ -5,12 +5,16 @@ class Competition < ApplicationRecord
   has_many :teams, through: :competition_teams
   has_many :matches, dependent: :destroy
 
+  enum :platform, { pc: 0, playstation: 1, xbox: 2 }
+  enum :format, { round_robin: 0, single_elimination: 1, ladder: 2, swiss: 3 }
+
   def to_param
     slug
   end
 
-  enum :platform, { pc: 0, playstation: 1, xbox: 2 }
-  enum :format, { round_robin: 0, single_elimination: 1, ladder: 2, swiss: 3 }
+  def game_version
+    self.league.game_version
+  end
 
   def refresh_matches
     client = CyanideApi::Client.new
@@ -64,15 +68,9 @@ class Competition < ApplicationRecord
       team.update!(
         name: t["team"],
         slug: t["team"].parameterize,
-        value: t["value"],
-        cash: t["cash"],
-        rerolls: t["rerolls"],
-        apothecary: t["apothecary"],
-        assistant_coaches: t["assistant_coaches"],
-        cheerleaders: t["cheerleaders"],
-        popularity: t["popularity"],
         logo: t["logo"],
-        api_coach_id: t["coach_id"],
+        race: t["race"],
+        slogan: t["description"],
         api_data: t
       )
       competition_teams.find_or_create_by!(team: team)
@@ -100,6 +98,7 @@ class Competition < ApplicationRecord
   end
 
   def refresh_standings
+    Rails.logger.debug "👀 Refreshing standings for competition #{name} (#{api_id}) "
     client = CyanideApi::Client.new
     data = client.ladder(competition_id: api_id, game_version: league.game_version)
     api_rankings = data["ranking"] || []
@@ -114,7 +113,8 @@ class Competition < ApplicationRecord
       wins, draws, losses = wdl[0], wdl[1], wdl[2]
       matches_played = wins + draws + losses
       points = wins * 3 + draws
-      ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points, position: team_data["rank"], api_data: entry)
+      score = entry["score"]
+      ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points, score: score, position: team_data["rank"], api_data: entry)
     end
     true
   rescue CyanideApi::NotFoundError

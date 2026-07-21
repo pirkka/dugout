@@ -1,0 +1,12 @@
+<h1><%= @coach.name %></h1>
+
+<% if @coach.teams.any? %>
+  <h2>Teams</h2>
+  <ul>
+    <% @coach.teams.each do |team| %>
+      <li><%= link_to team.name, team %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No teams.</p>
+<% end %>

@@ -18,11 +18,25 @@
 <% if @match.round %>
   <p><strong>Round:</strong> <%= @match.round %></p>
 <% end %>
+<p><strong>Match ID:</strong> <%= @match.api_id %></p>
 
 <p>
     <b>Debug links:</b>
     <%= link_to "cyanide match", @match.cyanide_match_uri, target: '_blank' %>
 </p>
+
+<h2>Replay</h2>
+<% if @match.replay? %>
+  <p>Replay file: <%= @match.replay_file_name %></p>
+  <%= button_to "Parse Replay", parse_replay_match_path(@match), method: :post, style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px; margin-bottom: 8px;" %>
+  <% if @match.replay_json.present? %>
+    <p><%= link_to "View Replay Data", match_replay_path(@match) %></p>
+  <% end %>
+<% end %>
+<%= form_tag upload_replay_match_path(@match), multipart: true, style: "font-size: 18px;" do %>
+  <%= file_field_tag :replay, accept: ".bbr", style: "font-family: Verdana; font-size: 14px;" %>
+  <%= submit_tag "Upload", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
+<% end %>
 
 <h2>Team Stats</h2>
 <% @match.match_teams.sort_by(&:id).each do |mt| %>
