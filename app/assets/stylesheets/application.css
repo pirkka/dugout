@@ -11,7 +11,7 @@ body {
 }
 
 a {
-    color: black;
+    color: #602900;
     text-decoration: none;
 }
 
@@ -31,10 +31,13 @@ th {
     text-align: center;
     border-bottom: 2px solid #602900;
 }
+.cutoff-line {
+    border-bottom: 2px dashed #602900;
+    height: 2px;
+}
 td {
     padding: 6px 10px;
     text-align: left;
-    border-bottom: 0px dashed #602900;
 }
 
 @media (max-width: 600px) {

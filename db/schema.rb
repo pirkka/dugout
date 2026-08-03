@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_091252) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_000002) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -50,6 +50,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_091252) do
     t.string "name", null: false
     t.integer "platform", null: false
     t.integer "series_id"
+    t.json "settings", default: {}
     t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.index ["api_id"], name: "index_competitions_on_api_id"
@@ -102,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_091252) do
     t.datetime "created_at", null: false
     t.integer "league_id", null: false
     t.string "name", null: false
+    t.json "settings", default: {}
     t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.index ["league_id"], name: "index_series_on_league_id"

@@ -23,11 +23,12 @@
         <th colspan="2" nowrap>Cas</th>
       </tr>
     </thead>
+    <% playoff_cutoff = @series.settings&.dig("playoff_cutoff")&.to_i %>
     <tbody>
       <% @series.series_teams.each do |st| %>
         <tr>
           <td><%= st.position %></td>
-          <td nowrap><%= link_to st.team.name, st.team %></td>
+          <td nowrap><%= link_to st.team.name, st.team %> <span><%= st.team.race %></span></td>
           <td>
             <%= image_tag st.team.logo_url, alt: 'logo', width: 32, height: 32 %>
           </td>
@@ -41,6 +42,13 @@
           <td>+<%= st.casualties_made %></td>
           <td>-<%= st.casualties_sustained %></td>
         </tr>
+        <% if playoff_cutoff && st.position == playoff_cutoff %>
+        <tr class="cutoff-row">
+          <td colspan="100%" style="padding:0; height:0;">
+            <div class="cutoff-line"></div>
+          </td>
+        </tr>
+        <% end %>
       <% end %>
     </tbody>
   </table>
