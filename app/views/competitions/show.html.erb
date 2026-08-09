@@ -54,6 +54,7 @@
       </tr>
     </thead>
     <tbody>
+      <% playoff_cutoff = @competition.settings&.dig("playoff_cutoff")&.to_i %>
       <% @competition.competition_teams.includes(:team).each do |ct| %>
         <tr>
           <td><%= ct.position %></td>
@@ -72,6 +73,13 @@
           <td>+<%= ct.casualties_made %></td>
           <td>-<%= ct.casualties_sustained %></td>
         </tr>
+        <% if playoff_cutoff && ct.position == playoff_cutoff %>
+        <tr class="cutoff-row">
+          <td colspan="100%" style="padding:0; height:0;">
+            <div class="cutoff-line"></div>
+          </td>
+        </tr>
+        <% end %>
       <% end %>
     </tbody>
   </table>
@@ -92,6 +100,9 @@
               <%= link_to mts[1].team.name, mts[1].team %>
           <% else %>
             N/A
+          <% end %>
+          <% if match.replay_json.present? %>
+              *
           <% end %>
         </li>
     <% end %>

@@ -1,0 +1,8 @@
+<h1>Upload Replays</h1>
+
+<p>Upload one or more JSON replay files. Each file is matched to a match by its root-level <code>match_hash</code>. Files without a matching match are skipped.</p>
+
+<%= form_tag upload_replay_batch_matches_path, multipart: true, style: "font-size: 18px;" do %>
+  <%= file_field_tag "replay_jsons[]", multiple: true, accept: ".json", style: "font-family: Verdana; font-size: 14px;" %>
+  <%= submit_tag "Upload Replays", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
+<% end %>

@@ -1,6 +1,6 @@
 <h1>Leagues</h1>
 
-<p><%= link_to "New League", new_league_path %></p>
+<p><%= link_to "New League", new_league_path %> | <%= link_to "Upload Replays", replays_path %></p>
 
 <% if @leagues_by_letter.any? %>
   <p>

@@ -25,7 +25,10 @@ Rails.application.routes.draw do
   get 'matches/:id' => 'matches#show', as: :match
   get 'matches/:id/replay' => 'matches#replay', as: :match_replay
   post 'matches/:id/upload_replay' => 'matches#upload_replay', as: :upload_replay_match
+  post 'matches/:id/upload_replay_json' => 'matches#upload_replay_json', as: :upload_replay_json_match
   post 'matches/:id/parse_replay' => 'matches#parse_replay', as: :parse_replay_match
+  get 'replays' => 'matches#replays', as: :replays
+  post 'matches/upload_replay_batch' => 'matches#upload_replay_batch', as: :upload_replay_batch_matches
   post 'leagues/:slug/refresh' => 'leagues#refresh', as: :refresh_league
   post 'competitions/:slug/refresh' => 'competitions#refresh', as: :refresh_competition
   post 'competitions/:slug/add_to_series' => 'competitions#add_to_series', as: :add_competition_to_series

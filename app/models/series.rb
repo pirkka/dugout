@@ -1,6 +1,6 @@
 class Series < ApplicationRecord
   belongs_to :league
-  has_many :competitions, dependent: :nullify
+  has_many :competitions, -> { order(created_at: :desc) }, dependent: :nullify
   has_many :series_teams, -> { order(position: :asc) }, dependent: :destroy
   has_many :teams, through: :series_teams
 

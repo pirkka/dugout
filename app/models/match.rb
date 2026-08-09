@@ -7,6 +7,35 @@ class Match < ApplicationRecord
   has_many :match_teams, dependent: :destroy
   has_many :teams, through: :match_teams
 
+  def home_team
+    match_teams.find_by(home: true)&.team
+  end
+
+  def away_team
+    match_teams.find_by(home: false)&.team
+  end
+
+  def self.upload_replay_jsons(files)
+    uploaded = 0
+    skipped = 0
+    Array(files).each do |file|
+      next unless file.respond_to?(:read)
+      begin
+        parsed = JSON.parse(file.read)
+        match = find_by(match_hash: parsed["match_hash"])
+        if match
+          match.update!(replay_json: parsed)
+          uploaded += 1
+        else
+          skipped += 1
+        end
+      rescue JSON::ParserError
+        skipped += 1
+      end
+    end
+    { uploaded: uploaded, skipped: skipped }
+  end
+
   def upload_replay(file)
     return false unless file
 
@@ -28,6 +57,17 @@ class Match < ApplicationRecord
 
   def replay?
     replay_data.present?
+  end
+
+  def upload_replay_json(file)
+    return false unless file
+
+    parsed = JSON.parse(file.read)
+    update!(replay_json: parsed)
+    true
+  rescue => e
+    errors.add(:replay_json, "Invalid JSON: #{e.message}")
+    false
   end
 
   def parse_replay!
@@ -52,5 +92,32 @@ class Match < ApplicationRecord
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = competition.league.game_version
     "https://web.cyanide-studio.com/ws/#{game_version}/match/?key=#{api_key}&match_id=#{api_id}&start=1980-01-01"
+  end
+
+  def match_hash_data
+    arr = [self.competition.league.api_id,
+     self.competition.api_id,
+     self.round.to_s,
+     self.away_team&.api_id, # fix order
+     self.home_team&.api_id, # fix order
+     self.finished.to_s.split('.').first.gsub(' UTC','').split(':').first] # remove trailing numbers (round to full seconds)
+    arr.join(':')
+  end
+
+  def calculate_match_hash
+    mh = Digest::SHA256.hexdigest(
+      match_hash_data
+    )
+    return mh
+  end
+
+  def key_highlights
+    all_highlights = []
+    replay_json&.dig("highlights")&.each do |highlight|
+      if highlight['event'] == "touch_down"
+        all_highlights << highlight
+      end
+    end
+    all_highlights
   end
 end

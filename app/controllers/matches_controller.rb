@@ -1,10 +1,22 @@
 class MatchesController < ApplicationController
-  before_action :set_match, only: %i[show upload_replay parse_replay replay]
+  before_action :set_match, only: %i[show upload_replay upload_replay_json parse_replay replay]
+
+  def replays
+  end
+
+  def upload_replay_batch
+    result = Match.upload_replay_jsons(params[:replay_jsons])
+    redirect_to replays_path, notice: "Uploaded #{result[:uploaded]} replay(s), skipped #{result[:skipped]}"
+  end
 
   def show
     if @match.nil?
       render file: "#{Rails.root}/public/404.html", status: :not_found
     end
+    @competition = @match.competition
+    @league = @competition.league
+    @series = @competition.series
+    @round = @match.round
   end
 
   def replay
@@ -28,6 +40,16 @@ class MatchesController < ApplicationController
       redirect_to root_path, alert: "Match not found"
     elsif @match.upload_replay(params[:replay])
       redirect_to @match, notice: "Replay uploaded"
+    else
+      redirect_to @match, alert: @match.errors.full_messages.join(", ")
+    end
+  end
+
+  def upload_replay_json
+    if @match.nil?
+      redirect_to root_path, alert: "Match not found"
+    elsif @match.upload_replay_json(params[:replay_json])
+      redirect_to @match, notice: "Replay JSON uploaded"
     else
       redirect_to @match, alert: @match.errors.full_messages.join(", ")
     end

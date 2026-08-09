@@ -24,8 +24,8 @@ class Competition < ApplicationRecord
     api_matches.each do |m|
       match = matches.find_or_create_by!(api_id: m["uuid"].to_s)
       match.update!(started: m["started"], finished: m["finished"], round: m["round"], api_data: m)
-
       api_teams = m["teams"] || []
+      home = true
       api_teams.each do |t|
         team = Team.find_by(api_id: t["idteamlisting"])
         next unless team
@@ -34,14 +34,19 @@ class Competition < ApplicationRecord
         goals_scored = t["score"] || 0
         goals_conceded = opponent&.dig("score") || 0
         result = if goals_scored > goals_conceded
-                   :win
-                 elsif goals_scored < goals_conceded
-                   :loss
-                 else
-                   :draw
-                 end
-        mt.update!(result: result, score: goals_scored, conceded: goals_conceded, api_data: t)
+          :win
+        elsif goals_scored < goals_conceded
+          :loss
+        else
+          :draw
+        end
+        mt.update!(home: home, result: result, score: goals_scored, conceded: goals_conceded, api_data: t)
+        home = !home # the first team is home, the second is away
       end
+      # calculate and save the match_hash
+      match.reload
+      match_hash = match.calculate_match_hash
+      match.update!(match_hash: match_hash)
     end
     remove_duplicate_matches if format != :ladder
     refresh_standings if league.game_version.to_sym == :bb3

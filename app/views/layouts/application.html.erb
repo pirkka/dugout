@@ -42,8 +42,14 @@
           <% if @league %>
             &gt; <%= link_to @league.name, @league %>
           <% end %>
+          <% if @competition&.series %>
+            &gt; <%= link_to @competition.series.name, series_path(@competition.series.slug) %>
+          <% end %>
           <% if @competition %>
             &gt; <%= link_to @competition.name, @competition %>
+          <% end %>
+          <% if @round %>
+            &gt; <%= "round #{@round}" %>
           <% end %>
         </nav>
 

@@ -1,46 +1,58 @@
-<% mts = @match.match_teams.sort_by(&:id) %>
-<h1>
-  <% if mts.size == 2 && mts[0].team && mts[1].team %>
-    <%= link_to mts[0].team.name, mts[0].team %> <%= mts[0].score %> - <%= mts[1].score %> <%= link_to mts[1].team.name, mts[1].team %>
-  <% else %>
-    Match <%= @match.id %>
-  <% end %>
-</h1>
+<h2>
+<%= link_to @match.away_team&.name || 'n/a', @match.away_team %>
+<br>
+at
+<%= link_to @match.home_team&.name, @match.home_team %>
+<br>
+<%= @match.match_teams.find_by(home: false)&.score || 'n/a' %>
+-
+<%= @match.match_teams.find_by(home: true)&.score %>
+</h2>
 
-<p><strong>Competition:</strong> <%= link_to @match.competition.name, @match.competition %></p>
 
-<% if @match.started %>
-  <p><strong>Started:</strong> <%= @match.started.in_time_zone("Helsinki").strftime("%d.%m.%Y %H:%M") %></p>
-<% end %>
 <% if @match.finished %>
   <p><strong>Finished:</strong> <%= @match.finished.in_time_zone("Helsinki").strftime("%d.%m.%Y %H:%M") %></p>
 <% end %>
-<% if @match.round %>
-  <p><strong>Round:</strong> <%= @match.round %></p>
-<% end %>
-<p><strong>Match ID:</strong> <%= @match.api_id %></p>
+<p><strong>Match hash:</strong><br> <%= @match.calculate_match_hash %></p>
+
 
 <p>
     <b>Debug links:</b>
     <%= link_to "cyanide match", @match.cyanide_match_uri, target: '_blank' %>
 </p>
 
+<h2>Highlights</h2>
+<% if @match.replay_json.present? %>
+    <% @match.key_highlights.each do |h| %>
+      <p>
+          turn <%= h['turn'] %>
+            <%= h['event'].gsub('_','') %>
+            <%= h['player_name'] %>
+      </p>
+    <% end %>
+<% end %>
+
 <h2>Replay</h2>
 <% if @match.replay? %>
   <p>Replay file: <%= @match.replay_file_name %></p>
   <%= button_to "Parse Replay", parse_replay_match_path(@match), method: :post, style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px; margin-bottom: 8px;" %>
-  <% if @match.replay_json.present? %>
-    <p><%= link_to "View Replay Data", match_replay_path(@match) %></p>
-  <% end %>
+<% end %>
+<% if @match.replay_json.present? %>
+  <p><%= link_to "View Replay Data", match_replay_path(@match) %></p>
 <% end %>
 <%= form_tag upload_replay_match_path(@match), multipart: true, style: "font-size: 18px;" do %>
   <%= file_field_tag :replay, accept: ".bbr", style: "font-family: Verdana; font-size: 14px;" %>
   <%= submit_tag "Upload", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
 <% end %>
 
+<%= form_tag upload_replay_json_match_path(@match), multipart: true, style: "font-size: 18px; margin-top: 8px;" do %>
+  <%= file_field_tag :replay_json, accept: ".json", style: "font-family: Verdana; font-size: 14px;" %>
+  <%= button_tag "Upload JSON", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
+<% end %>
+
 <h2>Team Stats</h2>
 <% @match.match_teams.sort_by(&:id).each do |mt| %>
-  <h3><%= link_to mt.team.name, mt.team %> (<%= mt.score %> - <%= mt.conceded %>)</h3>
+  <h3><%= link_to mt.team.name, mt.team %> </h3>
   <% if mt.api_data %>
     <table>
       <tr><td>Touchdowns</td><td><%= mt.api_data["inflictedtouchdowns"] %></td></tr>
