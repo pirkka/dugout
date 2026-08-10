@@ -123,5 +123,25 @@ module CyanideApi
     ensure
       Client.define_method(:get, original)
     end
+
+    test "constructs contests request with competition params" do
+      response = { "contests" => [{ "game_id" => "abc-123", "round" => 3 }] }
+      original = Client.instance_method(:get)
+      Client.define_method(:get) { |*| response }
+
+      data = @client.contests(competition_id: "comp-1", league_id: "league-1")
+      assert_equal 3, data["contests"].first["round"]
+    ensure
+      Client.define_method(:get, original)
+    end
+
+    test "raises NotFoundError on contests 404" do
+      original = Client.instance_method(:get)
+      Client.define_method(:get) { |*| raise NotFoundError }
+
+      assert_raises(NotFoundError) { @client.contests(competition_id: "Unknown") }
+    ensure
+      Client.define_method(:get, original)
+    end
   end
 end

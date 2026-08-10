@@ -69,6 +69,13 @@ module CyanideApi
       get("/ladder/", params, game_version)
     end
 
+    def contests(competition_id: nil, league_id: nil, game_version: :bb3, status: "*", limit: 1000)
+      params = { status: status, limit: limit }
+      params[:league_id] = league_id if league_id
+      params[:competition_id] = competition_id if competition_id
+      get("/contests/", params, game_version)
+    end
+
     def team(team_id: nil, game_version: :bb3)
       params = { bb: api_bb_value(game_version) }
       params[:id] = team_id if team_id

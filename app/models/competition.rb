@@ -21,9 +21,18 @@ class Competition < ApplicationRecord
     data = client.matches(competition_name: name, competition_id: api_id, league_id: league.api_id, platform: platform, game_version: league.game_version)
     api_matches = data["matches"] || []
 
+    contest_rounds = {}
+    if league.game_version.to_sym == :bb3
+      client.contests(league_id: league.api_id, competition_id: api_id, game_version: league.game_version).fetch("contests", []).each do |contest|
+        contest_rounds[contest["game_id"].to_s] ||= contest["round"]
+      end
+    end
+
     api_matches.each do |m|
       match = matches.find_or_create_by!(api_id: m["uuid"].to_s)
-      match.update!(started: m["started"], finished: m["finished"], round: m["round"], api_data: m)
+      contest_round = contest_rounds[m["uuid"].to_s]
+      round = contest_round && contest_round.to_i > 0 ? contest_round : m["round"]
+      match.update!(started: m["started"], finished: m["finished"], round: round, api_data: m)
       api_teams = m["teams"] || []
       home = true
       api_teams.each do |t|

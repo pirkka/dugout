@@ -89,24 +89,31 @@
 
 <h2>Matches</h2>
 <% if @competition.matches.any? %>
-  <ul>
-    <% @competition.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.each do |match| %>
-      <% mts = match.match_teams.sort_by(&:id) %>
-        <li>
-          <%= link_to match.started.strftime("%B %d, %Y"), match %>:
-          <%= link_to mts[0].team.name, mts[0].team %>
-          <%= link_to "#{mts[0].score} - #{mts[1]&.score}", match %>
-          <% if mts[1] %>
-              <%= link_to mts[1].team.name, mts[1].team %>
-          <% else %>
-            N/A
-          <% end %>
-          <% if match.replay_json.present? %>
-              *
-          <% end %>
-        </li>
+  <% matches_by_round = @competition.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.group_by(&:round) %>
+  <% has_rounds = matches_by_round.keys.any? %>
+  <% (has_rounds ? matches_by_round.keys.sort_by { |r| r || Float::INFINITY } : [nil]).each do |round| %>
+    <% if has_rounds %>
+      <h3><%= round ? "Round #{round}" : "Round TBD" %></h3>
     <% end %>
-  </ul>
+    <ul>
+      <% matches_by_round[round].each do |match| %>
+        <% mts = match.match_teams.sort_by(&:id) %>
+          <li>
+            <%= link_to match.started.strftime("%B %d, %Y"), match %>:
+            <%= link_to mts[0].team.name, mts[0].team %>
+            <%= link_to "#{mts[0].score} - #{mts[1]&.score}", match %>
+            <% if mts[1] %>
+                <%= link_to mts[1].team.name, mts[1].team %>
+            <% else %>
+              N/A
+            <% end %>
+            <% if match.replay_json.present? %>
+                *
+            <% end %>
+          </li>
+      <% end %>
+    </ul>
+  <% end %>
 <% else %>
   <p>No matches yet.</p>
 <% end %>

@@ -64,6 +64,8 @@ class CompetitionTest < ActiveSupport::TestCase
     ]
     original_matches = CyanideApi::Client.instance_method(:matches)
     CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [] } }
     original_ladder = CyanideApi::Client.instance_method(:ladder)
     CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
 
@@ -84,6 +86,7 @@ class CompetitionTest < ActiveSupport::TestCase
     assert_equal({ "idteamlisting" => "id-101", "teamname" => "Cackling Furies", "score" => 2 }, home_mt.api_data)
   ensure
     CyanideApi::Client.define_method(:matches, original_matches)
+    CyanideApi::Client.define_method(:contests, original_contests)
     CyanideApi::Client.define_method(:ladder, original_ladder)
   end
 
@@ -98,6 +101,8 @@ class CompetitionTest < ActiveSupport::TestCase
     ]
     original_matches = CyanideApi::Client.instance_method(:matches)
     CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [] } }
     original_ladder = CyanideApi::Client.instance_method(:ladder)
     CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
 
@@ -110,6 +115,78 @@ class CompetitionTest < ActiveSupport::TestCase
     assert_equal 3, existing.match_teams.find_by(team: home).score
   ensure
     CyanideApi::Client.define_method(:matches, original_matches)
+    CyanideApi::Client.define_method(:contests, original_contests)
+    CyanideApi::Client.define_method(:ladder, original_ladder)
+  end
+
+  test "refresh_matches derives round from contests for bb3" do
+    league = League.create!(name: "BB3 League", slug: "bb3-league", platform: :pc, game_version: :bb3)
+    comp = league.competitions.create!(name: "BB3 Cup", slug: "bb3-cup", format: :round_robin, platform: :pc)
+    home = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "id-101")
+    away = Team.create!(name: "Razorback Raiders", slug: "razorback-raiders", api_id: "id-102")
+    api_matches = [
+      { "uuid" => "abc-123", "started" => "2026-06-01 19:00:00", "finished" => "2026-06-01 20:30:00", "round" => nil, "teams" => [{ "idteamlisting" => "id-101", "teamname" => "Cackling Furies", "score" => 2 }, { "idteamlisting" => "id-102", "teamname" => "Razorback Raiders", "score" => 1 }] }
+    ]
+    original_matches = CyanideApi::Client.instance_method(:matches)
+    CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [{ "game_id" => "abc-123", "round" => 4 }] } }
+    original_ladder = CyanideApi::Client.instance_method(:ladder)
+    CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
+
+    assert comp.refresh_matches
+    assert_equal 4, comp.matches.first.round
+  ensure
+    CyanideApi::Client.define_method(:matches, original_matches)
+    CyanideApi::Client.define_method(:contests, original_contests)
+    CyanideApi::Client.define_method(:ladder, original_ladder)
+  end
+
+  test "refresh_matches ignores round 0 from contests for bb3" do
+    league = League.create!(name: "BB3 League", slug: "bb3-league", platform: :pc, game_version: :bb3)
+    comp = league.competitions.create!(name: "BB3 Cup", slug: "bb3-cup", format: :round_robin, platform: :pc)
+    home = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "id-101")
+    away = Team.create!(name: "Razorback Raiders", slug: "razorback-raiders", api_id: "id-102")
+    api_matches = [
+      { "uuid" => "abc-123", "started" => "2026-06-01 19:00:00", "finished" => "2026-06-01 20:30:00", "round" => nil, "teams" => [{ "idteamlisting" => "id-101", "teamname" => "Cackling Furies", "score" => 2 }, { "idteamlisting" => "id-102", "teamname" => "Razorback Raiders", "score" => 1 }] }
+    ]
+    original_matches = CyanideApi::Client.instance_method(:matches)
+    CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [{ "game_id" => "abc-123", "round" => 0 }] } }
+    original_ladder = CyanideApi::Client.instance_method(:ladder)
+    CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
+
+    assert comp.refresh_matches
+    assert_nil comp.matches.first.round
+  ensure
+    CyanideApi::Client.define_method(:matches, original_matches)
+    CyanideApi::Client.define_method(:contests, original_contests)
+    CyanideApi::Client.define_method(:ladder, original_ladder)
+  end
+
+  test "refresh_matches does not call contests for bb2" do
+    league = League.create!(name: "BB2 League", slug: "bb2-league", platform: :pc, game_version: :bb2)
+    comp = league.competitions.create!(name: "BB2 Cup", slug: "bb2-cup", format: :round_robin, platform: :pc)
+    home = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "id-101")
+    away = Team.create!(name: "Razorback Raiders", slug: "razorback-raiders", api_id: "id-102")
+    api_matches = [
+      { "uuid" => "abc-123", "started" => "2026-06-01 19:00:00", "finished" => "2026-06-01 20:30:00", "round" => 3, "teams" => [{ "idteamlisting" => "id-101", "teamname" => "Cackling Furies", "score" => 2 }, { "idteamlisting" => "id-102", "teamname" => "Razorback Raiders", "score" => 1 }] }
+    ]
+    contests_called = false
+    original_matches = CyanideApi::Client.instance_method(:matches)
+    CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| contests_called = true; { "contests" => [] } }
+    original_ladder = CyanideApi::Client.instance_method(:ladder)
+    CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
+
+    assert comp.refresh_matches
+    assert_equal 3, comp.matches.first.round
+    refute contests_called
+  ensure
+    CyanideApi::Client.define_method(:matches, original_matches)
+    CyanideApi::Client.define_method(:contests, original_contests)
     CyanideApi::Client.define_method(:ladder, original_ladder)
   end
 
