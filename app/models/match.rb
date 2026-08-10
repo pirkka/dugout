@@ -100,7 +100,7 @@ class Match < ApplicationRecord
      self.round.to_s,
      self.away_team&.api_id, # fix order
      self.home_team&.api_id, # fix order
-     self.finished.to_s.split('.').first.gsub(' UTC','').split(':').first] # remove trailing numbers (round to full seconds)
+     self.finished&.to_s&.split('.')&.first&.gsub(' UTC','')&.split(':')&.first] # remove trailing numbers (round to full seconds)
     arr.join(':')
   end
 

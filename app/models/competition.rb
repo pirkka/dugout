@@ -85,6 +85,13 @@ class Competition < ApplicationRecord
         logo: t["logo"],
         race: t["race"],
         slogan: t["description"],
+        value: t["value"],
+        cash: t["cash"],
+        rerolls: t["rerolls"],
+        apothecary: t["apothecary"],
+        assistant_coaches: t["assistant_coaches"] || t["coach_assistants"],
+        cheerleaders: t["cheerleaders"],
+        popularity: t["popularity"],
         api_data: t
       )
       competition_teams.find_or_create_by!(team: team)

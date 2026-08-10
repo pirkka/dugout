@@ -97,9 +97,13 @@ class LeagueTest < ActiveSupport::TestCase
     original_league = CyanideApi::Client.instance_method(:league)
     original_competitions = CyanideApi::Client.instance_method(:competitions)
     original_matches = CyanideApi::Client.instance_method(:matches)
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    original_ladder = CyanideApi::Client.instance_method(:ladder)
     CyanideApi::Client.define_method(:league) { |**| data }
     CyanideApi::Client.define_method(:competitions) { |**| { "competitions" => comps } }
     CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [] } }
+    CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
 
     assert @league.refresh_from_api
     assert_equal 1, @league.competitions.count
@@ -111,6 +115,8 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:league, original_league)
     CyanideApi::Client.define_method(:competitions, original_competitions)
     CyanideApi::Client.define_method(:matches, original_matches)
+    CyanideApi::Client.define_method(:contests, original_contests)
+    CyanideApi::Client.define_method(:ladder, original_ladder)
   end
 
   test "refresh_competitions creates competitions from API" do
