@@ -119,6 +119,27 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:ladder, original_ladder)
   end
 
+  test "refresh_from_api refreshes matches only for the 3 latest competitions" do
+    data = api_response(name: "Test League", id: "fdjklsajkl4324")
+    comps = (1..5).map { |i| { "name" => "Season #{i}", "id" => 500 + i, "format" => "RoundRobin" } }
+    original_league = CyanideApi::Client.instance_method(:league)
+    original_competitions = CyanideApi::Client.instance_method(:competitions)
+    CyanideApi::Client.define_method(:league) { |**| data }
+    CyanideApi::Client.define_method(:competitions) { |**| { "competitions" => comps } }
+
+    refreshed = []
+    original_matches = Competition.instance_method(:refresh_matches)
+    Competition.define_method(:refresh_matches) { refreshed << api_id; true }
+
+    assert @league.refresh_from_api
+    assert_equal 5, @league.competitions.count
+    assert_equal %w[503 504 505], refreshed.sort
+  ensure
+    CyanideApi::Client.define_method(:league, original_league)
+    CyanideApi::Client.define_method(:competitions, original_competitions)
+    Competition.define_method(:refresh_matches, original_matches)
+  end
+
   test "refresh_competitions creates competitions from API" do
     comps = [
       { "name" => "Season 15", "id" => 501, "format" => "RoundRobin" },
