@@ -10,27 +10,22 @@
   <%= link_to "Back to match", @match %> |
   <%= link_to "cyanide match", @match.cyanide_match_uri, target: '_blank' %>
 </p>
-<h2>Summary</h2>
-<table>
-  <tr><th>Team</th><th>Coach</th><th>Score</th></tr>
-    <tr>
-      <td><%= replay["teams"]['away']["name"] %> (away)</td>
-      <td><%= replay["coaches"]['away'] && replay["coaches"]['away']["name"] %></td>
-      <td><%= replay["teams"]['away']["score"] %></td>
-    </tr>
-    <tr>
-      <td><%= replay["teams"]['home']["name"] %> (home)</td>
-      <td><%= replay["coaches"]['home'] && replay["coaches"]['home']["name"] %></td>
-      <td><%= replay["teams"]['home']["score"] %></td>
-    </tr>
-</table>
+
 <h2>Highlights</h2>
 <table>
-  <tr><th>Turn</th><th>Type</th><th>Details</th></tr>
+  <tr><th>Turn</th><th>Player</th><th>Location</th><th>Type</th><th>Details</th></tr>
 <% replay['highlights'].each do |h| %>
   <tr>
   <td nowrap>
-  turn <%= h['turn'] %> (<%= h['team']%> team )
+  <%= h['turn'] %>/<%= h['team'] %>
+  </td>
+  <td>
+    <%= h['player_name'] %>
+  </td>
+  <td nowrap>
+    <%= h['to'] && h['to'].map{|k,v| v }.join(',') %>
+    ➡️
+    <%= h['new_position'] && h['new_position'].map{|k,v| v }.join(',') %>
   </td>
   <td>
   <%= h['event'] %>
@@ -39,7 +34,6 @@
   <% if h['event'] == 'injury_caused' %>
       <%= h['injured_player_name']+ ' ' + h['injury_type'] %>
 <% end %>
-  <%= h['player_name'] %>
   </td>
   </tr>
 <% end %>

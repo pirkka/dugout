@@ -56,16 +56,43 @@
   <p>No standings yet. Click "Refresh standings" to calculate.</p>
 <% end %>
 
-<h2>Competitions</h2>
+<h2>Matches</h2>
 <% if @series.competitions.any? %>
-  <ul style="list-style: none; padding-left: 0;">
-    <% @series.competitions.each do |comp| %>
-      <li<%= ' class="inactive"'.html_safe unless comp.competition_teams.any? %>>
-        <%= link_to(comp.name, comp) %>
-        <span><%= comp.format.gsub('_',' ') %></span>
-      </li>
+  <% @series.competitions.each do |comp| %>
+    <h3>
+      <%= link_to comp.name, comp %>
+      <span><%= comp.format.gsub('_',' ') %></span>
+    </h3>
+    <% if comp.matches.any? %>
+      <% matches_by_round = comp.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.group_by(&:round) %>
+      <% has_rounds = matches_by_round.keys.any? %>
+      <% (has_rounds ? matches_by_round.keys.sort_by { |r| r ? -r : -Float::INFINITY } : [nil]).each do |round| %>
+        <% if has_rounds %>
+          <h4><%= round ? "Round #{round}" : "Round TBD" %></h4>
+        <% end %>
+        <ul>
+          <% matches_by_round[round].each do |match| %>
+            <% mts = match.match_teams.sort_by(&:id) %>
+            <li>
+              <%= link_to mts[0].team.name, mts[0].team %>
+              vs
+              <% if mts[1] %>
+                <%= link_to mts[1].team.name, mts[1].team %>
+              <% else %>
+                N/A
+              <% end %>
+              <%= link_to "#{mts[0].score} - #{mts[1]&.score ||0}", match %>
+              <% if match.replay_json.present? %>
+                *
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% else %>
+      <p>No matches yet.</p>
     <% end %>
-  </ul>
+  <% end %>
 <% else %>
   <p>No competitions yet.</p>
 <% end %>

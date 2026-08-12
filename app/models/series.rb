@@ -1,6 +1,8 @@
 class Series < ApplicationRecord
   belongs_to :league
-  has_many :competitions, -> { order(created_at: :desc) }, dependent: :nullify
+  has_many :competitions, -> {
+    order(Arel.sql("(SELECT MIN(matches.started) FROM matches WHERE matches.competition_id = competitions.id) DESC NULLS LAST"))
+  }, dependent: :nullify
   has_many :series_teams, -> { order(position: :asc) }, dependent: :destroy
   has_many :teams, through: :series_teams
 

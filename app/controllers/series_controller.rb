@@ -1,6 +1,6 @@
 class SeriesController < ApplicationController
   def show
-    @series = Series.includes(:league, competitions: :competition_teams, series_teams: :team).find_by(slug: params[:slug])
+    @series = Series.includes(:league, competitions: [{ competition_teams: :team }, { matches: { match_teams: :team } }], series_teams: :team).find_by(slug: params[:slug])
     if @series.nil?
       render file: "#{Rails.root}/public/404.html", status: :not_found
     else
