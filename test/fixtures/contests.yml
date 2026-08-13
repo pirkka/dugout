@@ -1,0 +1,11 @@
+upcoming_round_1:
+  api_id: "cn-001"
+  competition: rebell_season_15
+  match_id: "mc-001"
+  round: 3
+  status: Scheduled
+  match_date: 2026-08-20 19:00:00
+  home_team: cackling_furies
+  away_team: razorback_raiders
+  api_data:
+    contest_id: cn-001

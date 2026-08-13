@@ -87,6 +87,33 @@
   <p>No teams yet.</p>
 <% end %>
 
+<h2>Upcoming Matches</h2>
+<% if @competition.contests.any? %>
+  <ul>
+    <% @competition.contests.order(:match_date, :round).each do |contest| %>
+      <li>
+        <%= contest.match_date ? contest.match_date.strftime("%B %d, %Y") + ":" : "TBA" %>
+        <% if contest.home_team %>
+          <%= link_to contest.home_team.name, contest.home_team %>
+        <% else %>
+          N/A
+        <% end %>
+        vs
+        <% if contest.away_team %>
+          <%= link_to contest.away_team.name, contest.away_team %>
+        <% else %>
+          N/A
+        <% end %>
+        <% if contest.round %>
+          (Round <%= contest.round %>)
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No upcoming matches.</p>
+<% end %>
+
 <h2>Matches</h2>
 <% if @competition.matches.any? %>
   <% matches_by_round = @competition.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.group_by(&:round) %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_09_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_13_130536) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -55,6 +55,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_000003) do
     t.datetime "updated_at", null: false
     t.index ["api_id"], name: "index_competitions_on_api_id"
     t.index ["series_id"], name: "index_competitions_on_series_id"
+  end
+
+  create_table "contests", force: :cascade do |t|
+    t.json "api_data"
+    t.string "api_id"
+    t.integer "away_team_id"
+    t.integer "competition_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "home_team_id"
+    t.datetime "match_date"
+    t.string "match_id"
+    t.integer "round"
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.index ["api_id"], name: "index_contests_on_api_id"
+    t.index ["away_team_id"], name: "index_contests_on_away_team_id"
+    t.index ["competition_id"], name: "index_contests_on_competition_id"
+    t.index ["home_team_id"], name: "index_contests_on_home_team_id"
   end
 
   create_table "leagues", force: :cascade do |t|
@@ -105,6 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_000003) do
   create_table "series", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "league_id", null: false
+    t.integer "length"
     t.string "name", null: false
     t.json "settings", default: {}
     t.string "slug", null: false
@@ -160,6 +179,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_000003) do
   add_foreign_key "competition_teams", "competitions"
   add_foreign_key "competition_teams", "teams"
   add_foreign_key "competitions", "series"
+  add_foreign_key "contests", "competitions"
+  add_foreign_key "contests", "teams", column: "away_team_id"
+  add_foreign_key "contests", "teams", column: "home_team_id"
   add_foreign_key "match_teams", "matches"
   add_foreign_key "match_teams", "teams"
   add_foreign_key "matches", "competitions"

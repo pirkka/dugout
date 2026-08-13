@@ -1,0 +1,20 @@
+<h1>Edit <%= @series.name %></h1>
+
+<%= form_with model: @series, url: series_path(@series.slug), method: :patch do |f| %>
+  <div>
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+  </div>
+
+  <div>
+    <%= f.label :length %>
+    <%= f.number_field :length, min: 0 %>
+  </div>
+
+  <div>
+    <%= f.label :playoff_cutoff, "Playoff cutoff position" %>
+    <%= f.number_field :playoff_cutoff, min: 0 %>
+  </div>
+
+  <%= f.submit "Update Series" %>
+<% end %>

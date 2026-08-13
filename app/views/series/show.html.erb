@@ -3,6 +3,7 @@
 <div class="debug">
   <strong>Debug links:</strong>
   <%= link_to "league: #{@series.league.name}", @series.league %>
+  <%= link_to "Edit", edit_series_path(@series.slug) %>
   <%= button_to "Refresh standings", refresh_series_path(@series.slug), method: :post, style: 'display: inline;' %>
 </div>
 
@@ -23,7 +24,7 @@
         <th colspan="2" nowrap>Cas</th>
       </tr>
     </thead>
-    <% playoff_cutoff = @series.settings&.dig("playoff_cutoff")&.to_i %>
+    <% playoff_cutoff = @series.playoff_cutoff&.to_i %>
     <tbody>
       <% @series.series_teams.each do |st| %>
         <tr>
@@ -63,6 +64,30 @@
       <%= link_to comp.name, comp %>
       <span><%= comp.format.gsub('_',' ') %></span>
     </h3>
+    <% if comp.contests.any? %>
+      <h4>Upcoming</h4>
+      <ul>
+        <% comp.contests.order(:match_date, :round).each do |contest| %>
+          <li>
+            <%= contest.match_date ? contest.match_date.strftime("%B %d, %Y") + ":" : "TBA" %>
+            <% if contest.home_team %>
+              <%= link_to contest.home_team.name, contest.home_team %>
+            <% else %>
+              N/A
+            <% end %>
+            vs
+            <% if contest.away_team %>
+              <%= link_to contest.away_team.name, contest.away_team %>
+            <% else %>
+              N/A
+            <% end %>
+            <% if contest.round %>
+              (Round <%= contest.round %>)
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
     <% if comp.matches.any? %>
       <% matches_by_round = comp.matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.group_by(&:round) %>
       <% has_rounds = matches_by_round.keys.any? %>

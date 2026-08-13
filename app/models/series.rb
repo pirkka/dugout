@@ -6,6 +6,24 @@ class Series < ApplicationRecord
   has_many :series_teams, -> { order(position: :asc) }, dependent: :destroy
   has_many :teams, through: :series_teams
 
+  before_update :update_slug, if: :name_changed?
+
+  def playoff_cutoff
+    settings&.dig("playoff_cutoff")
+  end
+
+  def playoff_cutoff=(value)
+    self.settings = (settings || {}).merge("playoff_cutoff" => value.presence)
+  end
+
+  private
+
+  def update_slug
+    self.slug = name.parameterize
+  end
+
+  public
+
   def calculate_standings
     rows = CompetitionTeam
       .joins(:competition)

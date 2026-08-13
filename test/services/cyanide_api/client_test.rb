@@ -135,6 +135,40 @@ module CyanideApi
       Client.define_method(:get, original)
     end
 
+    test "contests passes league and competition names for bb2" do
+      captured = nil
+      original = Client.instance_method(:get)
+      Client.define_method(:get) { |*args| captured = args; { "upcoming_matches" => [] } }
+
+      @client.contests(league_name: "The Fourth Division", competition_name: "Lihamylly, kierros 3", game_version: "bb2")
+      path, params, version = captured
+      assert_equal "/contests/", path
+      assert_equal "bb2", version
+      assert_equal "The Fourth Division", params[:league]
+      assert_equal "Lihamylly, kierros 3", params[:competition]
+      assert_nil params[:league_id]
+      assert_nil params[:competition_id]
+    ensure
+      Client.define_method(:get, original)
+    end
+
+    test "contests passes league and competition ids for bb3" do
+      captured = nil
+      original = Client.instance_method(:get)
+      Client.define_method(:get) { |*args| captured = args; { "contests" => [] } }
+
+      @client.contests(league_id: "league-1", competition_id: "comp-1", game_version: "bb3")
+      path, params, version = captured
+      assert_equal "/contests/", path
+      assert_equal "bb3", version
+      assert_equal "league-1", params[:league_id]
+      assert_equal "comp-1", params[:competition_id]
+      assert_nil params[:league]
+      assert_nil params[:competition]
+    ensure
+      Client.define_method(:get, original)
+    end
+
     test "raises NotFoundError on contests 404" do
       original = Client.instance_method(:get)
       Client.define_method(:get) { |*| raise NotFoundError }

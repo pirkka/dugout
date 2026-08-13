@@ -61,6 +61,7 @@ class LeagueTest < ActiveSupport::TestCase
   test "refresh_from_api calls refresh_competitions and refresh_matches" do
     comp_called = false
     match_called = false
+    upcoming_called = false
 
     data = api_response(name: "Test", id: "1")
     original_league = CyanideApi::Client.instance_method(:league)
@@ -73,14 +74,18 @@ class LeagueTest < ActiveSupport::TestCase
 
     original_matches = Competition.instance_method(:refresh_matches)
     Competition.define_method(:refresh_matches) { match_called = true; true }
+    original_upcoming = Competition.instance_method(:refresh_upcoming_matches)
+    Competition.define_method(:refresh_upcoming_matches) { upcoming_called = true; true }
 
     @league.refresh_from_api
 
     assert comp_called
     assert match_called
+    assert upcoming_called
   ensure
     CyanideApi::Client.define_method(:league, original_league)
     Competition.define_method(:refresh_matches, original_matches)
+    Competition.define_method(:refresh_upcoming_matches, original_upcoming)
   end
 
   test "refresh_from_api refreshes competitions and matches" do
@@ -130,6 +135,8 @@ class LeagueTest < ActiveSupport::TestCase
     refreshed = []
     original_matches = Competition.instance_method(:refresh_matches)
     Competition.define_method(:refresh_matches) { refreshed << api_id; true }
+    original_upcoming = Competition.instance_method(:refresh_upcoming_matches)
+    Competition.define_method(:refresh_upcoming_matches) { true }
 
     assert @league.refresh_from_api
     assert_equal 5, @league.competitions.count
@@ -138,6 +145,7 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:league, original_league)
     CyanideApi::Client.define_method(:competitions, original_competitions)
     Competition.define_method(:refresh_matches, original_matches)
+    Competition.define_method(:refresh_upcoming_matches, original_upcoming)
   end
 
   test "refresh_competitions creates competitions from API" do

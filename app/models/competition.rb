@@ -4,6 +4,7 @@ class Competition < ApplicationRecord
   has_many :competition_teams, -> { order(position: :asc) }, dependent: :destroy
   has_many :teams, through: :competition_teams
   has_many :matches, dependent: :destroy
+  has_many :contests, dependent: :destroy
 
   enum :platform, { pc: 0, playstation: 1, xbox: 2 }
   enum :format, { round_robin: 0, single_elimination: 1, ladder: 2, swiss: 3 }
@@ -64,6 +65,49 @@ class Competition < ApplicationRecord
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Matches not found on API")
+    false
+  rescue CyanideApi::Error => e
+    errors.add(:base, e.message)
+    false
+  end
+
+  def refresh_upcoming_matches
+    client = CyanideApi::Client.new
+    data = client.contests(
+      league_name: league.name,
+      competition_name: name,
+      league_id: league.api_id,
+      competition_id: api_id,
+      game_version: league.game_version,
+      status: "*"
+    )
+    api_contests = data["contests"] || data["upcoming_matches"] || []
+
+    upcoming_ids = []
+    api_contests.each do |c|
+      contest_status = c["contest_status"] || c["status"]
+      next if %w[Validated played].include?(contest_status)
+      next if api_id.present? && c["competition_id"].to_s != api_id
+      upcoming_ids << c["contest_id"].to_s
+      contest = contests.find_or_initialize_by(api_id: c["contest_id"].to_s)
+      opponents = c["opponents"] || []
+      contest.update!(
+        match_id: c["match_id"]&.to_s,
+        round: c["round"],
+        status: contest_status,
+        match_date: c["match_date"],
+        home_team: team_for_contest(opponents[0]),
+        away_team: team_for_contest(opponents[1]),
+        api_data: c
+      )
+    end
+
+    if api_contests.any?
+      contests.where.not(api_id: upcoming_ids).destroy_all
+    end
+    true
+  rescue CyanideApi::NotFoundError
+    errors.add(:base, "Upcoming matches not found on API")
     false
   rescue CyanideApi::Error => e
     errors.add(:base, e.message)
@@ -187,6 +231,16 @@ class Competition < ApplicationRecord
     game_version = league.game_version
     "https://web.cyanide-studio.com/ws/#{game_version}/teams/?key=#{api_key}&competition_id=#{api_id}"
   end
+
+  private
+
+  def team_for_contest(opponent)
+    return nil unless opponent
+    team_id = opponent.dig("team", "id") || opponent.dig("team", "idteamlisting")
+    team_id ? Team.find_by(api_id: team_id.to_s) : nil
+  end
+
+  public
 
   def cyanide_standings_uri
     api_key = Rails.application.credentials.cyanide_api_key
