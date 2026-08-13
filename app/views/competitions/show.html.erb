@@ -89,27 +89,31 @@
 
 <h2>Upcoming Matches</h2>
 <% if @competition.contests.any? %>
-  <ul>
-    <% @competition.contests.order(:match_date, :round).each do |contest| %>
-      <li>
-        <%= contest.match_date ? contest.match_date.strftime("%B %d, %Y") + ":" : "TBA" %>
-        <% if contest.home_team %>
-          <%= link_to contest.home_team.name, contest.home_team %>
-        <% else %>
-          N/A
-        <% end %>
-        vs
-        <% if contest.away_team %>
-          <%= link_to contest.away_team.name, contest.away_team %>
-        <% else %>
-          N/A
-        <% end %>
-        <% if contest.round %>
-          (Round <%= contest.round %>)
-        <% end %>
-      </li>
+  <% contests_by_round = @competition.contests.order(:match_date).group_by(&:round) %>
+  <% has_rounds = contests_by_round.keys.any? %>
+  <% (has_rounds ? contests_by_round.keys.sort_by { |r| r || Float::INFINITY } : [nil]).each do |round| %>
+    <% if has_rounds %>
+      <h3><%= round ? "Round #{round}" : "Round TBD" %></h3>
     <% end %>
-  </ul>
+    <ul>
+      <% contests_by_round[round].each do |contest| %>
+        <li>
+          <%= "#{contest.match_date.strftime("%B %d, %Y")}:" if contest.match_date %>
+          <% if contest.home_team %>
+            <%= link_to contest.home_team.name, contest.home_team %>
+          <% else %>
+            N/A
+          <% end %>
+          vs
+          <% if contest.away_team %>
+            <%= link_to contest.away_team.name, contest.away_team %>
+          <% else %>
+            N/A
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
 <% else %>
   <p>No upcoming matches.</p>
 <% end %>

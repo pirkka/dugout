@@ -7,6 +7,12 @@ class Team < ApplicationRecord
   has_many :match_teams, dependent: :destroy
   has_many :matches, through: :match_teams
 
+  def upcoming_contests
+    Contest.where(competition_id: competitions.select(:id))
+      .where("home_team_id = :team_id OR away_team_id = :team_id", team_id: id)
+      .order(Arel.sql("CASE WHEN round IS NULL THEN 1 ELSE 0 END, round, match_date"))
+  end
+
   def to_param
     slug
   end

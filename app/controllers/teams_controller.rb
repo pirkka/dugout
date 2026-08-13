@@ -7,6 +7,7 @@ class TeamsController < ApplicationController
     else
       @league = @team.competitions.first&.league
       @competition = @team.competitions.first
+      @upcoming_contests = @team.upcoming_contests.includes(:competition, :home_team, :away_team)
     end
   end
 

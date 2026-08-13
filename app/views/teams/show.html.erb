@@ -17,6 +17,33 @@
 Coach: <%= link_to @team.coach.name, @team.coach if @team.coach %>
 Race: <%= @team.race %>
 
+<h2>Upcoming Matches</h2>
+<% if @upcoming_contests.any? %>
+  <% @upcoming_contests.group_by(&:competition).each do |competition, contests| %>
+    <h3><%= link_to competition.name, competition %></h3>
+    <ul>
+      <% contests.each do |contest| %>
+        <li>
+          <%= "#{contest.match_date.strftime("%B %d, %Y")}:" if contest.match_date %>
+          <%= link_to @team.name, @team %>
+          vs
+          <% opponent = contest.home_team_id == @team.id ? contest.away_team : contest.home_team %>
+          <% if opponent %>
+            <%= link_to opponent.name, opponent %>
+          <% else %>
+            N/A
+          <% end %>
+          <% if contest.round %>
+            (Round <%= contest.round %>)
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% else %>
+  <p>No upcoming matches.</p>
+<% end %>
+
 <% if @team.matches.any? %>
   <% matches_by_comp = @team.matches.includes(:competition).group_by(&:competition) %>
   <% matches_by_comp.each do |competition, matches| %>

@@ -18,6 +18,7 @@ class CompetitionsControllerTest < ActionDispatch::IntegrationTest
     match.match_teams.create!(team: teams(:razorback_raiders), score: 0, conceded: 1)
     competition = competitions(:rebell_season_15)
     competition.matches.update_all(round: nil)
+    contests(:upcoming_round_1).destroy
 
     get competition_path(competition)
     assert_response :success
@@ -32,9 +33,11 @@ class CompetitionsControllerTest < ActionDispatch::IntegrationTest
     get competition_path(competitions(:rebell_season_15))
     assert_response :success
     assert_select "h2", text: "Upcoming Matches"
+    assert_select "h3", text: "Round 3"
     assert_select "li", text: /August 20, 2026:/
     assert_select "li", text: /Cackling Furies/
     assert_select "li", text: /Razorback Raiders/
+    assert_select "li", text: /TBA/, count: 0
   end
 
   test "refresh calls refresh_upcoming_matches" do
