@@ -2,10 +2,12 @@ require 'bbr_processor'
 
 class Match < ApplicationRecord
   REPLAY_FILENAME_REGEX = /\A\d{4}-\d{2}-\d{2}_\d{2}-\d{2}_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.bbr\z/i
+  AWAY_PLAYER_ID_OFFSET = 36
 
   belongs_to :competition
   has_many :match_teams, dependent: :destroy
   has_many :teams, through: :match_teams
+  has_many :player_versions, dependent: :destroy
 
   def home_team
     match_teams.find_by(home: true)&.team
@@ -25,6 +27,7 @@ class Match < ApplicationRecord
         match = find_by(match_hash: parsed["match_hash"])
         if match
           match.update!(replay_json: parsed)
+          match.record_player_versions!(parsed)
           uploaded += 1
         else
           skipped += 1
@@ -64,6 +67,7 @@ class Match < ApplicationRecord
 
     parsed = JSON.parse(file.read)
     update!(replay_json: parsed)
+    record_player_versions!(parsed)
     true
   rescue => e
     errors.add(:replay_json, "Invalid JSON: #{e.message}")
@@ -79,6 +83,7 @@ class Match < ApplicationRecord
 
     result = BBReplay.process(tmpfile.path)
     update!(replay_json: result)
+    record_player_versions!(result)
     true
   rescue => e
     errors.add(:replay_json, "Failed to parse replay: #{e.message}")
@@ -119,5 +124,96 @@ class Match < ApplicationRecord
       end
     end
     all_highlights
+  end
+
+  def record_player_versions!(parsed = replay_json)
+    return 0 unless parsed.is_a?(Hash)
+
+    transaction do
+      player_versions.destroy_all
+      count = 0
+
+      if parsed.dig("teams", "home", "players").is_a?(Hash)
+        count = record_player_versions_new_format(parsed)
+      elsif parsed.dig("info", "players").is_a?(Hash)
+        count = record_player_versions_old_format(parsed)
+      end
+
+      count
+    end
+  end
+
+  private
+
+  def record_player_versions_new_format(parsed)
+    count = 0
+
+    parsed["teams"].each do |side, team_data|
+      team = Team.find_by(api_id: team_data["id"].to_s)
+      next unless team
+
+      offset = side == "away" ? AWAY_PLAYER_ID_OFFSET : 0
+
+      team_data["players"].each do |key, player_data|
+        number = key.to_i - offset
+        next unless number.positive?
+
+        player = Player.resolve(team, number: number, name: player_data["name"])
+        next unless player
+
+        player_versions.create!(
+          player: player,
+          name: player_data["name"],
+          number: number,
+          kind: player_data["kind"],
+          skills: player_data["skills"],
+          status: player_data["status"],
+          team_value: team_data["team_value"],
+          format: "new",
+          data: {
+            "side" => side,
+            "team" => { "id" => team_data["id"], "name" => team_data["name"], "team_value" => team_data["team_value"] },
+            "player" => player_data
+          }
+        )
+        count += 1
+      end
+    end
+
+    count
+  end
+
+  def record_player_versions_old_format(parsed)
+    count = 0
+    teams_by_slot = { "0" => home_team, "1" => away_team }
+
+    parsed["info"]["players"].each do |key, player_data|
+      slot = player_data["team"].to_s
+      team = teams_by_slot[slot]
+      next unless team
+
+      offset = slot == "1" ? AWAY_PLAYER_ID_OFFSET : 0
+      number = key.to_i - offset
+      next unless number.positive?
+
+      player = Player.resolve(team, number: number, name: player_data["name"])
+      next unless player
+
+      player_versions.create!(
+        player: player,
+        name: player_data["name"],
+        number: number,
+        player_type: player_data["player_type"],
+        format: "old",
+        data: {
+          "side" => slot == "1" ? "away" : "home",
+          "team" => parsed.dig("info", "teams", slot),
+          "player" => player_data
+        }
+      )
+      count += 1
+    end
+
+    count
   end
 end

@@ -21,4 +21,35 @@ class TeamTest < ActiveSupport::TestCase
 
     assert_equal [contests(:upcoming_round_1)], team.upcoming_contests
   end
+
+  test "current_roster returns latest version per player ordered by number" do
+    team = teams(:cackling_furies)
+    first_match = matches(:season_opener)
+    later_match = matches(:final_showdown)
+
+    ilona = Player.resolve(team, number: 1, name: "Ilona")
+    ratty = Player.resolve(team, number: 2, name: "Ratty")
+    PlayerVersion.create!(player: ilona, match: first_match, name: "Ilona", number: 1, skills: ["Block"])
+    PlayerVersion.create!(player: ilona, match: later_match, name: "Ilona", number: 1, skills: ["Block", "Guard"])
+    PlayerVersion.create!(player: ratty, match: later_match, name: "Ratty", number: 2, skills: [])
+
+    roster = team.current_roster
+
+    assert_equal [1, 2], roster.map { |v| v.player.number }
+    assert_equal ["Block", "Guard"], roster.first.skills
+    assert_equal ratty, roster.second.player
+  end
+
+  test "current_roster excludes players without a number" do
+    team = teams(:cackling_furies)
+    departed = Player.resolve(team, number: 3, name: "Departed")
+    PlayerVersion.create!(player: departed, match: matches(:season_opener), name: "Departed", number: 3, skills: [])
+    departed.update!(number: nil)
+
+    assert_equal [], team.current_roster
+  end
+
+  test "current_roster is empty without player versions" do
+    assert_equal [], teams(:razorback_raiders).current_roster
+  end
 end

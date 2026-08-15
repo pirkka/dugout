@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_13_130536) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_14_112725) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -120,6 +120,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_130536) do
     t.index ["match_hash"], name: "index_matches_on_match_hash"
   end
 
+  create_table "player_versions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.json "data"
+    t.string "format"
+    t.string "kind"
+    t.integer "match_id", null: false
+    t.string "name"
+    t.integer "number"
+    t.integer "player_id", null: false
+    t.integer "player_type"
+    t.json "skills"
+    t.string "status"
+    t.integer "team_value"
+    t.datetime "updated_at", null: false
+    t.index ["match_id"], name: "index_player_versions_on_match_id"
+    t.index ["player_id", "match_id"], name: "index_player_versions_on_player_id_and_match_id", unique: true
+    t.index ["player_id"], name: "index_player_versions_on_player_id"
+  end
+
+  create_table "players", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "number"
+    t.integer "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["team_id", "number"], name: "index_players_on_team_id_and_number", unique: true
+    t.index ["team_id"], name: "index_players_on_team_id"
+  end
+
   create_table "series", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "league_id", null: false
@@ -185,6 +214,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_130536) do
   add_foreign_key "match_teams", "matches"
   add_foreign_key "match_teams", "teams"
   add_foreign_key "matches", "competitions"
+  add_foreign_key "player_versions", "matches"
+  add_foreign_key "player_versions", "players"
+  add_foreign_key "players", "teams"
   add_foreign_key "series", "leagues"
   add_foreign_key "series_teams", "series"
   add_foreign_key "series_teams", "teams"

@@ -17,6 +17,34 @@
 Coach: <%= link_to @team.coach.name, @team.coach if @team.coach %>
 Race: <%= @team.race %>
 
+<h2>Roster</h2>
+<% if @current_roster.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Player</th>
+        <th>Position</th>
+        <th>Skills</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @current_roster.each do |version| %>
+        <tr>
+          <td><%= version.player.number %></td>
+          <td><%= version.name %></td>
+          <td><%= version.kind %></td>
+          <td><%= version.skills&.any? ? version.skills.join(", ") : "—" %></td>
+          <td><%= version.status == "normal" ? "" : version.status %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No roster data yet.</p>
+<% end %>
+
 <h2>Upcoming Matches</h2>
 <% if @upcoming_contests.any? %>
   <% @upcoming_contests.group_by(&:competition).each do |competition, contests| %>
