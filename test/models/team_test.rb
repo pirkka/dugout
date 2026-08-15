@@ -40,13 +40,44 @@ class TeamTest < ActiveSupport::TestCase
     assert_equal ratty, roster.second.player
   end
 
-  test "current_roster excludes players without a number" do
+  test "current_roster excludes departed players by status" do
     team = teams(:cackling_furies)
     departed = Player.resolve(team, number: 3, name: "Departed")
     PlayerVersion.create!(player: departed, match: matches(:season_opener), name: "Departed", number: 3, skills: [])
-    departed.update!(number: nil)
+    departed.update!(status: Player::FIRED)
 
     assert_equal [], team.current_roster
+  end
+
+  test "current_roster includes mng players" do
+    team = teams(:cackling_furies)
+    mng_player = Player.resolve(team, number: 1, name: "Mng")
+    PlayerVersion.create!(player: mng_player, match: matches(:season_opener), name: "Mng", number: 1, skills: [])
+    mng_player.update!(status: Player::MNG)
+
+    assert_equal [mng_player], team.current_roster.map(&:player)
+  end
+
+  test "departed_roster returns latest version per departed player" do
+    team = teams(:cackling_furies)
+    first_match = matches(:season_opener)
+    later_match = matches(:final_showdown)
+
+    fired = Player.resolve(team, number: 3, name: "Fired")
+    dead = Player.resolve(team, number: 4, name: "Dead")
+    active = Player.resolve(team, number: 5, name: "Active")
+    PlayerVersion.create!(player: fired, match: first_match, name: "Fired", number: 3, skills: ["Block"])
+    PlayerVersion.create!(player: fired, match: later_match, name: "Fired", number: 3, skills: ["Block", "Guard"])
+    PlayerVersion.create!(player: dead, match: later_match, name: "Dead", number: 4, skills: [])
+    PlayerVersion.create!(player: active, match: later_match, name: "Active", number: 5, skills: [])
+    fired.update!(status: Player::FIRED)
+    dead.update!(status: Player::DEAD)
+
+    departed = team.departed_roster
+
+    assert_equal [fired, dead], departed.map(&:player)
+    assert_equal ["Block", "Guard"], departed.first.skills
+    refute_includes departed.map(&:player), active
   end
 
   test "current_roster is empty without player versions" do

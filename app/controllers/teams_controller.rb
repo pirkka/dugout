@@ -9,6 +9,7 @@ class TeamsController < ApplicationController
       @competition = @team.competitions.first
       @upcoming_contests = @team.upcoming_contests.includes(:competition, :home_team, :away_team)
       @current_roster = @team.current_roster
+      @departed_roster = @team.departed_roster
     end
   end
 

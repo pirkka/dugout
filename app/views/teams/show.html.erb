@@ -36,13 +36,41 @@ Race: <%= @team.race %>
           <td><%= version.name %></td>
           <td><%= version.kind %></td>
           <td><%= version.skills&.any? ? version.skills.join(", ") : "—" %></td>
-          <td><%= version.status == "normal" ? "" : version.status %></td>
+          <td><% if version.player.status == "mng" %><span title="Miss next game">mng</span><% end %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
 <% else %>
   <p>No roster data yet.</p>
+<% end %>
+
+<h2>Departed</h2>
+<% if @departed_roster.any? %>
+  <table class="departed">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Player</th>
+        <th>Position</th>
+        <th>Skills</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @departed_roster.each do |version| %>
+        <tr>
+          <td><%= version.player.number %></td>
+          <td><%= version.name %></td>
+          <td><%= version.kind %></td>
+          <td><%= version.skills&.any? ? version.skills.join(", ") : "—" %></td>
+          <td><%= version.player.status == "dead" ? "dead" : "fired" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No departed players.</p>
 <% end %>
 
 <h2>Upcoming Matches</h2>

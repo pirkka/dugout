@@ -174,6 +174,35 @@ class MatchTest < ActiveSupport::TestCase
     assert_includes ilona.player_versions.pluck(:match_id), other.id
   end
 
+  test "record_player_versions! captures the severest injury_type from highlights" do
+    match = matches(:season_opener)
+    json = new_format_json
+    json["highlights"] = [
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "knocked_out" },
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "mng" },
+      { "event" => "touch_down", "player_id" => "1" }
+    ]
+
+    match.record_player_versions!(json)
+
+    injured = match.player_versions.find_by(name: "Trinity 'The Rookie'")
+    assert_equal Player::MNG, injured.injury_type
+    assert_nil match.player_versions.find_by(name: "Ilona 'The Queen'").injury_type
+  end
+
+  test "record_player_versions! marks dead players with the highest priority" do
+    match = matches(:season_opener)
+    json = new_format_json
+    json["highlights"] = [
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "dead" },
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "mng" }
+    ]
+
+    match.record_player_versions!(json)
+
+    assert_equal Player::DEAD, match.player_versions.find_by(name: "Trinity 'The Rookie'").injury_type
+  end
+
   test "record_player_versions! handles renumbering across matches" do
     match = matches(:season_opener)
     other = matches(:final_showdown)

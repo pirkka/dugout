@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_14_112725) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_090312) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -124,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_112725) do
     t.datetime "created_at", null: false
     t.json "data"
     t.string "format"
+    t.string "injury_type"
     t.string "kind"
     t.integer "match_id", null: false
     t.string "name"
@@ -143,8 +144,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_112725) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.integer "number"
+    t.string "status", default: "active", null: false
     t.integer "team_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_players_on_status"
     t.index ["team_id", "number"], name: "index_players_on_team_id_and_number", unique: true
     t.index ["team_id"], name: "index_players_on_team_id"
   end

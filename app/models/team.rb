@@ -15,16 +15,11 @@ class Team < ApplicationRecord
   end
 
   def current_roster
-    PlayerVersion
-      .joins(:match)
-      .where(player: players)
-      .order(Arel.sql("COALESCE(matches.started, matches.finished) DESC"))
-      .includes(:match, player: :team)
-      .to_a
-      .group_by(&:player_id)
-      .map { |_player_id, versions| versions.first }
-      .select { |version| version.player.number.present? }
-      .sort_by { |version| version.player.number }
+    roster_versions([Player::ACTIVE, Player::MNG])
+  end
+
+  def departed_roster
+    roster_versions([Player::FIRED, Player::DEAD])
   end
 
   def to_param
@@ -88,5 +83,19 @@ class Team < ApplicationRecord
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = self.competitions.first.league.game_version
     "https://web.cyanide-studio.com/ws/#{game_version}/team/?key=#{api_key}&id=#{api_id}&stats=1"
+  end
+
+  private
+
+  def roster_versions(statuses)
+    PlayerVersion
+      .joins(:match)
+      .where(player: players.where(status: statuses))
+      .order(Arel.sql("COALESCE(matches.started, matches.finished) DESC"))
+      .includes(:match, player: :team)
+      .to_a
+      .group_by(&:player_id)
+      .map { |_player_id, versions| versions.first }
+      .sort_by { |version| [version.player.number || Float::INFINITY, version.player.name.to_s.downcase] }
   end
 end

@@ -3,6 +3,13 @@ require 'bbr_processor'
 class Match < ApplicationRecord
   REPLAY_FILENAME_REGEX = /\A\d{4}-\d{2}-\d{2}_\d{2}-\d{2}_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.bbr\z/i
   AWAY_PLAYER_ID_OFFSET = 36
+  INJURY_PRIORITY = {
+    Player::DEAD => 0,
+    Player::MNG => 1,
+    "niggling_or_stat" => 2,
+    "badly_hurt" => 3,
+    "knocked_out" => 4
+  }.freeze
 
   belongs_to :competition
   has_many :match_teams, dependent: :destroy
@@ -126,27 +133,85 @@ class Match < ApplicationRecord
     all_highlights
   end
 
+  # Rebuilds versions for this match, then reprocesses both teams' remaining
+  # matches in chronological order so player identity resolution stays
+  # consistent (player numbers shift over time and names change in BB3).
   def record_player_versions!(parsed = replay_json)
     return 0 unless parsed.is_a?(Hash)
 
     transaction do
-      player_versions.destroy_all
-      count = 0
-
-      if parsed.dig("teams", "home", "players").is_a?(Hash)
-        count = record_player_versions_new_format(parsed)
-      elsif parsed.dig("info", "players").is_a?(Hash)
-        count = record_player_versions_old_format(parsed)
-      end
-
-      count
+      build_versions!(parsed)
+      affected_teams(parsed).compact.each { |team| self.class.rebuild_team_versions!(team, except: id) }
+      Player.find_each(&:refresh_status!)
+      player_versions.count
     end
+  end
+
+  # Rebuilds every player version from stored replay JSON in chronological
+  # order (match ids are not chronological) and recomputes lifecycle statuses.
+  def self.rebuild_all_versions!
+    count = 0
+    transaction do
+      PlayerVersion.delete_all
+      Player.delete_all
+      Match.where.not(replay_json: nil)
+        .order(Arel.sql("COALESCE(matches.started, matches.finished)"))
+        .each { |match| count += match.send(:build_versions!, match.replay_json) }
+      Player.find_each(&:refresh_status!)
+    end
+    count
   end
 
   private
 
+  def self.rebuild_team_versions!(team, except: nil)
+    team.matches.where.not(replay_json: nil)
+      .where.not(id: except)
+      .order(Arel.sql("COALESCE(matches.started, matches.finished)"))
+      .each { |match| match.send(:build_versions!, match.replay_json) }
+  end
+
+  def build_versions!(parsed)
+    player_versions.destroy_all
+    if parsed.dig("teams", "home", "players").is_a?(Hash)
+      record_player_versions_new_format(parsed)
+    elsif parsed.dig("info", "players").is_a?(Hash)
+      record_player_versions_old_format(parsed)
+    end
+  end
+
+  def affected_teams(parsed)
+    if parsed.dig("teams", "home", "players").is_a?(Hash)
+      [Team.find_by(api_id: parsed.dig("teams", "home", "id").to_s),
+       Team.find_by(api_id: parsed.dig("teams", "away", "id").to_s)]
+    else
+      [home_team, away_team]
+    end
+  end
+
+  # Maps JSON player keys to the severest injury sustained in a match. The
+  # injury_caused events carry an "injured_player_id" that is the JSON player
+  # key (home keys start at 1, away keys are offset by 36), so the key
+  # uniquely identifies the player within a match. The event's "team" field
+  # is unreliable, so we ignore it.
+  def injury_types_by_key(parsed)
+    injuries = {}
+    Array(parsed["highlights"]).each do |event|
+      next unless event["event"] == "injury_caused"
+
+      key = event["injured_player_id"].to_s
+      type = event["injury_type"]
+      next unless type && INJURY_PRIORITY.key?(type)
+
+      current = injuries[key]
+      injuries[key] = type if current.nil? || INJURY_PRIORITY[type] < INJURY_PRIORITY[current]
+    end
+    injuries
+  end
+
   def record_player_versions_new_format(parsed)
     count = 0
+    injuries = injury_types_by_key(parsed)
 
     parsed["teams"].each do |side, team_data|
       team = Team.find_by(api_id: team_data["id"].to_s)
@@ -168,6 +233,7 @@ class Match < ApplicationRecord
           kind: player_data["kind"],
           skills: player_data["skills"],
           status: player_data["status"],
+          injury_type: injuries[key],
           team_value: team_data["team_value"],
           format: "new",
           data: {

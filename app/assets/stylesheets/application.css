@@ -7,7 +7,7 @@ body {
     font-family: "MedievalSharp";
     font-weight: 400;
     font-style: normal;
-    font-size: 34px;
+    font-size: 20px;
 }
 
 a {
@@ -27,7 +27,7 @@ table {
 }
 
 th {
-    padding: 6px 10px;
+    padding: 3px 4px;
     text-align: center;
     border-bottom: 2px solid #602900;
 }
@@ -36,8 +36,12 @@ th {
     height: 2px;
 }
 td {
-    padding: 6px 10px;
+    padding: 0px 0px;
     text-align: left;
+}
+
+table.departed tbody tr {
+    opacity: 0.6;
 }
 
 @media (max-width: 600px) {

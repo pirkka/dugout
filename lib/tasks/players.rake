@@ -1,12 +1,16 @@
 namespace :players do
-  desc "Backfill player versions from stored replay JSON"
+  desc "Rebuild player versions and statuses from stored replay JSON"
   task backfill: :environment do
-    total = 0
-    Match.where.not(replay_json: nil).find_each do |match|
-      count = match.record_player_versions!
-      puts "Match #{match.api_id}: #{count} player version(s)"
-      total += count
+    count = Match.rebuild_all_versions!
+    puts "Rebuilt #{count} player version(s) total"
+  end
+
+  desc "Recompute lifecycle status for all players"
+  task recompute_statuses: :environment do
+    count = 0
+    Player.find_each do |player|
+      count += 1 if player.refresh_status!
     end
-    puts "Created #{total} player version(s) total"
+    puts "Recomputed status for #{count} player(s)"
   end
 end
