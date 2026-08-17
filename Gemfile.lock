@@ -377,10 +377,10 @@ GEM
       rbs (>= 3.0, < 5)
       sorbet-runtime
       yard
-    sqlite3 (2.9.5)
+    sqlite3 (2.9.6)
       mini_portile2 (~> 2.8.0)
-    sqlite3 (2.9.5-aarch64-linux-gnu)
-    sqlite3 (2.9.5-x86_64-linux-gnu)
+    sqlite3 (2.9.6-aarch64-linux-gnu)
+    sqlite3 (2.9.6-x86_64-linux-gnu)
     sshkit (1.25.0)
       base64
       logger
