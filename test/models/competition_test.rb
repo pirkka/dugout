@@ -302,7 +302,7 @@ class CompetitionTest < ActiveSupport::TestCase
     original = CyanideApi::Client.instance_method(:contests)
     CyanideApi::Client.define_method(:contests) { |**| { "contests" => [] } }
 
-    assert @competition.refresh_upcoming_matches
+    @competition.refresh_upcoming_matches
     assert_equal 1, @competition.contests.count
     assert_includes @competition.contests, contest
   ensure

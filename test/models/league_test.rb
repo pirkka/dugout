@@ -58,7 +58,7 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:competitions, original_competitions)
   end
 
-  test "refresh_from_api calls refresh_competitions and refresh_matches" do
+  test "refresh_from_api calls refresh_competitions and refresh_matches for active competitions" do
     comp_called = false
     match_called = false
     upcoming_called = false
@@ -76,6 +76,8 @@ class LeagueTest < ActiveSupport::TestCase
     Competition.define_method(:refresh_matches) { match_called = true; true }
     original_upcoming = Competition.instance_method(:refresh_upcoming_matches)
     Competition.define_method(:refresh_upcoming_matches) { upcoming_called = true; true }
+    original_active = Competition.instance_method(:active?)
+    Competition.define_method(:active?) { true }
 
     @league.refresh_from_api
 
@@ -86,6 +88,7 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:league, original_league)
     Competition.define_method(:refresh_matches, original_matches)
     Competition.define_method(:refresh_upcoming_matches, original_upcoming)
+    Competition.define_method(:active?, original_active)
   end
 
   test "refresh_from_api refreshes competitions and matches" do
@@ -107,8 +110,12 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:league) { |**| data }
     CyanideApi::Client.define_method(:competitions) { |**| { "competitions" => comps } }
     CyanideApi::Client.define_method(:matches) { |**| { "matches" => api_matches } }
-    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [] } }
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => [{ "contest_id" => "c001", "status" => "scheduled", "round" => 1, "opponents" => [] }] } }
     CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
+
+    # Make competition active so matches get refreshed
+    original_active = Competition.instance_method(:active?)
+    Competition.define_method(:active?) { true }
 
     assert @league.refresh_from_api
     assert_equal 1, @league.competitions.count
@@ -122,9 +129,10 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:matches, original_matches)
     CyanideApi::Client.define_method(:contests, original_contests)
     CyanideApi::Client.define_method(:ladder, original_ladder)
+    Competition.define_method(:active?, original_active)
   end
 
-  test "refresh_from_api refreshes matches only for the 3 latest competitions" do
+  test "refresh_from_api refreshes matches for all active competitions" do
     data = api_response(name: "Test League", id: "fdjklsajkl4324")
     comps = (1..5).map { |i| { "name" => "Season #{i}", "id" => 500 + i, "format" => "RoundRobin" } }
     original_league = CyanideApi::Client.instance_method(:league)
@@ -137,15 +145,54 @@ class LeagueTest < ActiveSupport::TestCase
     Competition.define_method(:refresh_matches) { refreshed << api_id; true }
     original_upcoming = Competition.instance_method(:refresh_upcoming_matches)
     Competition.define_method(:refresh_upcoming_matches) { true }
+    # Make odd-numbered competitions active
+    original_active = Competition.instance_method(:active?)
+    Competition.define_method(:active?) { api_id.to_i.odd? }
 
     assert @league.refresh_from_api
     assert_equal 5, @league.competitions.count
-    assert_equal %w[503 504 505], refreshed.sort
+    # Only odd-numbered competitions (501, 503, 505) should be active
+    assert_equal %w[501 503 505], refreshed.sort
   ensure
     CyanideApi::Client.define_method(:league, original_league)
     CyanideApi::Client.define_method(:competitions, original_competitions)
     Competition.define_method(:refresh_matches, original_matches)
     Competition.define_method(:refresh_upcoming_matches, original_upcoming)
+    Competition.define_method(:active?, original_active)
+  end
+
+  test "refresh_from_api marks finished competition correctly even without matches" do
+    data = api_response(name: "Test League", id: "fdjklsajkl4324")
+    comps = [
+      { "name" => "Old Season", "id" => 501, "format" => "RoundRobin" },
+      { "name" => "New Season", "id" => 502, "format" => "RoundRobin" }
+    ]
+    original_league = CyanideApi::Client.instance_method(:league)
+    original_competitions = CyanideApi::Client.instance_method(:competitions)
+    original_contests = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:league) { |**| data }
+    CyanideApi::Client.define_method(:competitions) { |**| { "competitions" => comps } }
+    # Old season: all contests played. New season: has upcoming contest.
+    CyanideApi::Client.define_method(:contests) do |competition_id: nil, **|
+      if competition_id.to_s == "501"
+        { "contests" => [{ "contest_id" => "c1", "status" => "Validated", "round" => 1, "opponents" => [], "competition_id" => "501" }] }
+      else
+        { "contests" => [{ "contest_id" => "c2", "status" => "scheduled", "round" => 1, "opponents" => [], "competition_id" => "502" }] }
+      end
+    end
+    original_ladder = CyanideApi::Client.instance_method(:ladder)
+    CyanideApi::Client.define_method(:ladder) { |**| { "ranking" => [] } }
+
+    assert @league.refresh_from_api
+    old = @league.competitions.find_by(api_id: "501")
+    new_comp = @league.competitions.find_by(api_id: "502")
+    assert_equal "finished", old.status
+    assert_equal "active", new_comp.status
+  ensure
+    CyanideApi::Client.define_method(:league, original_league)
+    CyanideApi::Client.define_method(:competitions, original_competitions)
+    CyanideApi::Client.define_method(:contests, original_contests)
+    CyanideApi::Client.define_method(:ladder, original_ladder)
   end
 
   test "refresh_competitions creates competitions from API" do

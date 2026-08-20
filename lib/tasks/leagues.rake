@@ -20,4 +20,16 @@ namespace :leagues do
       end
     end
   end
+
+  desc "Backfill competition statuses based on existing data"
+  task backfill_statuses: :environment do
+    Competition.find_each do |comp|
+      old_status = comp.status
+      comp.compute_status!
+      if comp.status != old_status
+        puts "#{comp.name}: #{old_status} -> #{comp.status}"
+      end
+    end
+    puts "Done."
+  end
 end

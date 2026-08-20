@@ -8,6 +8,7 @@ class Competition < ApplicationRecord
 
   enum :platform, { pc: 0, playstation: 1, xbox: 2 }
   enum :format, { round_robin: 0, single_elimination: 1, ladder: 2, swiss: 3 }
+  enum :status, { upcoming: 0, active: 1, finished: 2 }
 
   def to_param
     slug
@@ -15,6 +16,22 @@ class Competition < ApplicationRecord
 
   def game_version
     self.league.game_version
+  end
+
+  def active?
+    return true if contests.any?
+    matches.where("started > ?", 30.days.ago).exists?
+  end
+
+  def compute_status!(had_api_contests: false)
+    new_status = if active?
+      :active
+    elsif had_api_contests || !matches.empty?
+      :finished
+    else
+      :upcoming
+    end
+    update!(status: new_status)
   end
 
   def refresh_matches
@@ -82,6 +99,7 @@ class Competition < ApplicationRecord
       status: "*"
     )
     api_contests = data["contests"] || data["upcoming_matches"] || []
+    had_any_contests = api_contests.any?
 
     upcoming_ids = []
     api_contests.each do |c|
@@ -105,7 +123,7 @@ class Competition < ApplicationRecord
     if api_contests.any?
       contests.where.not(api_id: upcoming_ids).destroy_all
     end
-    true
+    had_any_contests
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Upcoming matches not found on API")
     false

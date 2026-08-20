@@ -31,7 +31,23 @@ class League < ApplicationRecord
       api_data: data
     )
     refresh_competitions
-    competitions.limit(3).each { |competition| competition.refresh_upcoming_matches; competition.refresh_matches }
+
+    active_competitions = []
+    competitions.each do |competition|
+      had_contests = competition.refresh_upcoming_matches
+      competition.compute_status!(had_api_contests: had_contests)
+      active_competitions << competition if competition.active?
+    end
+
+    active_competitions.each do |competition|
+      competition.refresh_teams
+      competition.refresh_matches
+    end
+
+    series.each do |s|
+      s.calculate_standings if s.active?
+    end
+
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "League not found on API")

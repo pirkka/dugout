@@ -26,8 +26,9 @@
 <% if @league.competitions.any? %>
   <ul style="list-style: none; padding-left: 0;">
     <% @league.competitions.each do |comp| %>
-      <li<%= ' class="inactive"'.html_safe unless comp.competition_teams.any? %>>
+      <li class="competition-<%= comp.status %>">
         <%= link_to(comp.name, comp) %>
+        <span class="badge badge-<%= comp.status %>"><%= comp.status %></span>
         <span><%= comp.format.gsub('_',' ') %></span>
       </li>
     <% end %>
