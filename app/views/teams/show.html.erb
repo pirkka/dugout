@@ -30,13 +30,13 @@ Race: <%= @team.race %>
       </tr>
     </thead>
     <tbody>
-      <% @current_roster.each do |version| %>
+      <% @current_roster.each do |match_player| %>
         <tr>
-          <td><%= version.player.number %></td>
-          <td><%= version.name %></td>
-          <td><%= version.kind %></td>
-          <td><%= version.skills&.any? ? version.skills.join(", ") : "—" %></td>
-          <td><% if version.player.status == "mng" %><span title="Miss next game">mng</span><% end %></td>
+          <td><%= match_player.player.number %></td>
+          <td nowrap><%= link_to match_player.name, match_player.player %></td>
+          <td><%= match_player.kind %></td>
+          <td><%= match_player.skills&.any? ? match_player.skills.join(", ") : "—" %></td>
+          <td><% if match_player.player.status == "mng" %><span title="Miss next game">mng</span><% end %></td>
         </tr>
       <% end %>
     </tbody>
@@ -58,13 +58,13 @@ Race: <%= @team.race %>
       </tr>
     </thead>
     <tbody>
-      <% @departed_roster.each do |version| %>
+      <% @departed_roster.each do |match_player| %>
         <tr>
-          <td><%= version.player.number %></td>
-          <td><%= version.name %></td>
-          <td><%= version.kind %></td>
-          <td><%= version.skills&.any? ? version.skills.join(", ") : "—" %></td>
-          <td><%= version.player.status == "dead" ? "dead" : "fired" %></td>
+          <td><%= match_player.player.number %></td>
+          <td><%= link_to match_player.name, match_player.player %></td>
+          <td><%= match_player.kind %></td>
+          <td><%= match_player.skills&.any? ? match_player.skills.join(", ") : "—" %></td>
+          <td><%= match_player.player.status == "dead" ? "dead" : "fired" %></td>
         </tr>
       <% end %>
     </tbody>

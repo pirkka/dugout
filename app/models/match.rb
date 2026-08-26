@@ -14,7 +14,7 @@ class Match < ApplicationRecord
   belongs_to :competition
   has_many :match_teams, dependent: :destroy
   has_many :teams, through: :match_teams
-  has_many :player_versions, dependent: :destroy
+  has_many :match_players, dependent: :destroy
 
   def home_team
     match_teams.find_by(home: true)&.team
@@ -34,7 +34,7 @@ class Match < ApplicationRecord
         match = find_by(match_hash: parsed["match_hash"])
         if match
           match.update!(replay_json: parsed)
-          match.record_player_versions!(parsed)
+          match.record_match_players!(parsed)
           uploaded += 1
         else
           skipped += 1
@@ -74,7 +74,7 @@ class Match < ApplicationRecord
 
     parsed = JSON.parse(file.read)
     update!(replay_json: parsed)
-    record_player_versions!(parsed)
+    record_match_players!(parsed)
     true
   rescue => e
     errors.add(:replay_json, "Invalid JSON: #{e.message}")
@@ -90,7 +90,7 @@ class Match < ApplicationRecord
 
     result = BBReplay.process(tmpfile.path)
     update!(replay_json: result)
-    record_player_versions!(result)
+    record_match_players!(result)
     true
   rescue => e
     errors.add(:replay_json, "Failed to parse replay: #{e.message}")
@@ -133,30 +133,30 @@ class Match < ApplicationRecord
     all_highlights
   end
 
-  # Rebuilds versions for this match, then reprocesses both teams' remaining
-  # matches in chronological order so player identity resolution stays
-  # consistent (player numbers shift over time and names change in BB3).
-  def record_player_versions!(parsed = replay_json)
+  # Rebuilds match players for this match, then reprocesses both teams'
+  # remaining matches in chronological order so player identity resolution
+  # stays consistent (player numbers shift over time and names change in BB3).
+  def record_match_players!(parsed = replay_json)
     return 0 unless parsed.is_a?(Hash)
 
     transaction do
-      build_versions!(parsed)
-      affected_teams(parsed).compact.each { |team| self.class.rebuild_team_versions!(team, except: id) }
+      build_match_players!(parsed)
+      affected_teams(parsed).compact.each { |team| self.class.rebuild_team_match_players!(team, except: id) }
       Player.find_each(&:refresh_status!)
-      player_versions.count
+      match_players.count
     end
   end
 
-  # Rebuilds every player version from stored replay JSON in chronological
+  # Rebuilds every match player from stored replay JSON in chronological
   # order (match ids are not chronological) and recomputes lifecycle statuses.
-  def self.rebuild_all_versions!
+  def self.rebuild_all_match_players!
     count = 0
     transaction do
-      PlayerVersion.delete_all
+      MatchPlayer.delete_all
       Player.delete_all
       Match.where.not(replay_json: nil)
         .order(Arel.sql("COALESCE(matches.started, matches.finished)"))
-        .each { |match| count += match.send(:build_versions!, match.replay_json) }
+        .each { |match| count += match.send(:build_match_players!, match.replay_json) }
       Player.find_each(&:refresh_status!)
     end
     count
@@ -164,19 +164,19 @@ class Match < ApplicationRecord
 
   private
 
-  def self.rebuild_team_versions!(team, except: nil)
+  def self.rebuild_team_match_players!(team, except: nil)
     team.matches.where.not(replay_json: nil)
       .where.not(id: except)
       .order(Arel.sql("COALESCE(matches.started, matches.finished)"))
-      .each { |match| match.send(:build_versions!, match.replay_json) }
+      .each { |match| match.send(:build_match_players!, match.replay_json) }
   end
 
-  def build_versions!(parsed)
-    player_versions.destroy_all
+  def build_match_players!(parsed)
+    match_players.destroy_all
     if parsed.dig("teams", "home", "players").is_a?(Hash)
-      record_player_versions_new_format(parsed)
+      record_match_players_new_format(parsed)
     elsif parsed.dig("info", "players").is_a?(Hash)
-      record_player_versions_old_format(parsed)
+      record_match_players_old_format(parsed)
     end
   end
 
@@ -194,7 +194,7 @@ class Match < ApplicationRecord
   # key (home keys start at 1, away keys are offset by 36), so the key
   # uniquely identifies the player within a match. The event's "team" field
   # is unreliable, so we ignore it.
-  def injury_types_by_key(parsed)
+  def injuries_by_key(parsed)
     injuries = {}
     Array(parsed["highlights"]).each do |event|
       next unless event["event"] == "injury_caused"
@@ -204,14 +204,16 @@ class Match < ApplicationRecord
       next unless type && INJURY_PRIORITY.key?(type)
 
       current = injuries[key]
-      injuries[key] = type if current.nil? || INJURY_PRIORITY[type] < INJURY_PRIORITY[current]
+      if current.nil? || INJURY_PRIORITY[type] < INJURY_PRIORITY[current[:type]]
+        injuries[key] = { type: type, detail: event["injury_detail"] }
+      end
     end
     injuries
   end
 
-  def record_player_versions_new_format(parsed)
+  def record_match_players_new_format(parsed)
     count = 0
-    injuries = injury_types_by_key(parsed)
+    injuries = injuries_by_key(parsed)
 
     parsed["teams"].each do |side, team_data|
       team = Team.find_by(api_id: team_data["id"].to_s)
@@ -226,14 +228,17 @@ class Match < ApplicationRecord
         player = Player.resolve(team, number: number, name: player_data["name"])
         next unless player
 
-        player_versions.create!(
+        injury = injuries[key]
+
+        match_players.create!(
           player: player,
           name: player_data["name"],
           number: number,
           kind: player_data["kind"],
           skills: player_data["skills"],
           status: player_data["status"],
-          injury_type: injuries[key],
+          injury_type: injury&.dig(:type),
+          injury_detail: injury&.dig(:detail),
           team_value: team_data["team_value"],
           format: "new",
           data: {
@@ -249,7 +254,7 @@ class Match < ApplicationRecord
     count
   end
 
-  def record_player_versions_old_format(parsed)
+  def record_match_players_old_format(parsed)
     count = 0
     teams_by_slot = { "0" => home_team, "1" => away_team }
 
@@ -265,7 +270,7 @@ class Match < ApplicationRecord
       player = Player.resolve(team, number: number, name: player_data["name"])
       next unless player
 
-      player_versions.create!(
+      match_players.create!(
         player: player,
         name: player_data["name"],
         number: number,

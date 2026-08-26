@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_090312) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_140130) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -52,6 +52,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_090312) do
     t.integer "series_id"
     t.json "settings", default: {}
     t.string "slug", null: false
+    t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["api_id"], name: "index_competitions_on_api_id"
     t.index ["series_id"], name: "index_competitions_on_series_id"
@@ -87,6 +88,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_090312) do
     t.index ["api_id"], name: "index_leagues_on_api_id"
   end
 
+  create_table "match_players", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.json "data"
+    t.string "format"
+    t.string "injury_detail"
+    t.string "injury_type"
+    t.string "kind"
+    t.integer "match_id", null: false
+    t.string "name"
+    t.integer "number"
+    t.integer "player_id", null: false
+    t.integer "player_type"
+    t.json "skills"
+    t.string "status"
+    t.integer "team_value"
+    t.datetime "updated_at", null: false
+    t.index ["match_id"], name: "index_match_players_on_match_id"
+    t.index ["player_id", "match_id"], name: "index_match_players_on_player_id_and_match_id", unique: true
+    t.index ["player_id"], name: "index_match_players_on_player_id"
+  end
+
   create_table "match_teams", force: :cascade do |t|
     t.json "api_data"
     t.integer "conceded"
@@ -118,26 +140,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_090312) do
     t.index ["api_id"], name: "index_matches_on_api_id"
     t.index ["competition_id"], name: "index_matches_on_competition_id"
     t.index ["match_hash"], name: "index_matches_on_match_hash"
-  end
-
-  create_table "player_versions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.json "data"
-    t.string "format"
-    t.string "injury_type"
-    t.string "kind"
-    t.integer "match_id", null: false
-    t.string "name"
-    t.integer "number"
-    t.integer "player_id", null: false
-    t.integer "player_type"
-    t.json "skills"
-    t.string "status"
-    t.integer "team_value"
-    t.datetime "updated_at", null: false
-    t.index ["match_id"], name: "index_player_versions_on_match_id"
-    t.index ["player_id", "match_id"], name: "index_player_versions_on_player_id_and_match_id", unique: true
-    t.index ["player_id"], name: "index_player_versions_on_player_id"
   end
 
   create_table "players", force: :cascade do |t|
@@ -214,11 +216,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_090312) do
   add_foreign_key "contests", "competitions"
   add_foreign_key "contests", "teams", column: "away_team_id"
   add_foreign_key "contests", "teams", column: "home_team_id"
+  add_foreign_key "match_players", "matches"
+  add_foreign_key "match_players", "players"
   add_foreign_key "match_teams", "matches"
   add_foreign_key "match_teams", "teams"
   add_foreign_key "matches", "competitions"
-  add_foreign_key "player_versions", "matches"
-  add_foreign_key "player_versions", "players"
   add_foreign_key "players", "teams"
   add_foreign_key "series", "leagues"
   add_foreign_key "series_teams", "series"

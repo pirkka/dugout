@@ -15,11 +15,11 @@ class Team < ApplicationRecord
   end
 
   def current_roster
-    roster_versions([Player::ACTIVE, Player::MNG])
+    roster_match_players([Player::ACTIVE, Player::MNG])
   end
 
   def departed_roster
-    roster_versions([Player::FIRED, Player::DEAD])
+    roster_match_players([Player::FIRED, Player::DEAD])
   end
 
   def to_param
@@ -87,11 +87,10 @@ class Team < ApplicationRecord
 
   private
 
-  def roster_versions(statuses)
-    PlayerVersion
-      .joins(:match)
+  def roster_match_players(statuses)
+    MatchPlayer
       .where(player: players.where(status: statuses))
-      .order(Arel.sql("COALESCE(matches.started, matches.finished) DESC"))
+      .newest_first
       .includes(:match, player: :team)
       .to_a
       .group_by(&:player_id)

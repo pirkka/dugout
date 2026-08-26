@@ -36,24 +36,23 @@
       <p style="background: #f8d7da; padding: 10px; margin: 0;"><%= alert %></p>
     <% end %>
 
+    <nav>
+      <%= link_to "Home", root_path %>
+      <% if @league %>
+        &gt; <%= link_to @league.name, @league %>
+      <% end %>
+      <% if @competition&.series %>
+        &gt; <%= link_to @competition.series.name, series_path(@competition.series.slug) %>
+      <% end %>
+      <% if @competition %>
+        &gt; <%= link_to @competition.name, @competition %>
+      <% end %>
+      <% if @round %>
+        &gt; round <%= @round %>
+      <% end %>
+    </nav>
+
     <main class="container">
-        <nav>
-          <%= link_to "Home", root_path %>
-          <% if @league %>
-            &gt; <%= link_to @league.name, @league %>
-          <% end %>
-          <% if @competition&.series %>
-            &gt; <%= link_to @competition.series.name, series_path(@competition.series.slug) %>
-          <% end %>
-          <% if @competition %>
-            &gt; <%= link_to @competition.name, @competition %>
-          <% end %>
-          <% if @round %>
-            &gt; <%= "round #{@round}" %>
-          <% end %>
-        </nav>
-
-
         <%= yield %>
     </main>
   </body>

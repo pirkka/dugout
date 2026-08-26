@@ -49,7 +49,7 @@ class PlayerTest < ActiveSupport::TestCase
   test "resolve does not rename a dead player" do
     team = teams(:cackling_furies)
     dead = Player.resolve(team, number: 2, name: "Lautapoika")
-    PlayerVersion.create!(player: dead, match: matches(:season_opener), name: "Lautapoika", number: 2, status: Player::DEAD)
+    MatchPlayer.create!(player: dead, match: matches(:season_opener), name: "Lautapoika", number: 2, status: Player::DEAD)
 
     successor = Player.resolve(team, number: 2, name: "Yritysjargon Titteli")
 
@@ -63,14 +63,14 @@ class PlayerTest < ActiveSupport::TestCase
     team = teams(:cackling_furies)
     MatchTeam.create!(match: matches(:final_showdown), team: team, home: true)
     player = Player.create!(team: team, number: 1, name: "Active")
-    PlayerVersion.create!(player: player, match: matches(:final_showdown), name: "Active", number: 1, status: "normal")
+    MatchPlayer.create!(player: player, match: matches(:final_showdown), name: "Active", number: 1, status: "normal")
 
     assert_equal Player::ACTIVE, player.compute_status
   end
 
   test "compute_status is dead when a version has dead status" do
     player = Player.create!(team: teams(:cackling_furies), number: 1, name: "Dead")
-    PlayerVersion.create!(player: player, match: matches(:final_showdown), name: "Dead", number: 1, status: Player::DEAD)
+    MatchPlayer.create!(player: player, match: matches(:final_showdown), name: "Dead", number: 1, status: Player::DEAD)
 
     assert_equal Player::DEAD, player.compute_status
   end
@@ -79,7 +79,7 @@ class PlayerTest < ActiveSupport::TestCase
     team = teams(:cackling_furies)
     MatchTeam.create!(match: matches(:final_showdown), team: team, home: true)
     player = Player.create!(team: team, number: 1, name: "Mng")
-    PlayerVersion.create!(player: player, match: matches(:final_showdown), name: "Mng", number: 1, status: "injured", injury_type: Player::MNG)
+    MatchPlayer.create!(player: player, match: matches(:final_showdown), name: "Mng", number: 1, status: "injured", injury_type: Player::MNG)
 
     assert_equal Player::MNG, player.compute_status
   end
@@ -92,14 +92,14 @@ class PlayerTest < ActiveSupport::TestCase
     MatchTeam.create!(match: later, team: teams(:razorback_raiders), home: false)
 
     player = Player.create!(team: team, number: 1, name: "Recovered")
-    PlayerVersion.create!(player: player, match: mng_match, name: "Recovered", number: 1, status: "injured", injury_type: Player::MNG)
+    MatchPlayer.create!(player: player, match: mng_match, name: "Recovered", number: 1, status: "injured", injury_type: Player::MNG)
 
     assert_equal Player::ACTIVE, player.compute_status
   end
 
   test "compute_status is fired for a freed number" do
     player = Player.create!(team: teams(:cackling_furies), number: 1, name: "Gone")
-    PlayerVersion.create!(player: player, match: matches(:season_opener), name: "Gone", number: 1, status: "normal")
+    MatchPlayer.create!(player: player, match: matches(:season_opener), name: "Gone", number: 1, status: "normal")
     player.update!(number: nil)
 
     assert_equal Player::FIRED, player.compute_status
@@ -122,10 +122,10 @@ class PlayerTest < ActiveSupport::TestCase
     end
 
     player = Player.create!(team: team, number: 1, name: "Fired")
-    PlayerVersion.create!(player: player, match: matches[0], name: "Fired", number: 1, status: "normal")
+    MatchPlayer.create!(player: player, match: matches[0], name: "Fired", number: 1, status: "normal")
     filler = Player.create!(team: team, number: 2, name: "Filler")
-    PlayerVersion.create!(player: filler, match: matches[1], name: "Filler", number: 2, status: "normal")
-    PlayerVersion.create!(player: filler, match: matches[2], name: "Filler", number: 2, status: "normal")
+    MatchPlayer.create!(player: filler, match: matches[1], name: "Filler", number: 2, status: "normal")
+    MatchPlayer.create!(player: filler, match: matches[2], name: "Filler", number: 2, status: "normal")
 
     assert_equal Player::FIRED, player.compute_status
   end

@@ -24,6 +24,7 @@ Rails.application.routes.draw do
   get 'coaches/:slug' => 'coaches#show', as: :coach
   get 'teams/:slug' => 'teams#show', as: :team
   post 'teams/:slug/refresh' => 'teams#refresh', as: :refresh_team
+  get 'players/:id' => 'players#show', as: :player
   get 'matches/:id' => 'matches#show', as: :match
   get 'matches/:id/replay' => 'matches#replay', as: :match_replay
   post 'matches/:id/upload_replay' => 'matches#upload_replay', as: :upload_replay_match

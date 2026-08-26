@@ -1,0 +1,40 @@
+<h1>
+  <%= @player.name %>
+
+  #<%= @player.number %>
+  <span><%= @player.status %></span>
+</h1>
+
+<p>
+  <%= link_to @player.team.name, @player.team %><br/>
+  <%= @match_players.first&.kind || @match_players.first&.player_type %><br/>
+  <%= @match_players.size %> matches played<br/>
+
+</p>
+
+
+<h2>Match history</h2>
+<% if @match_players.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Match</th>
+        <th>Skills</th>
+        <th>Injury suffered</th>
+        <th>TV</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @match_players.each do |match_player| %>
+        <tr>
+          <td><%= link_to match_player.match.started&.strftime("%B %d, %Y") || "TBD", match_player.match %></td>
+          <td><%= match_player.skills&.any? ? match_player.skills.join(", ") : "—" %></td>
+          <td><%= [match_player.injury_type, match_player.injury_detail].compact.join(" — ") %></td>
+          <td><%= match_player.team_value %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No match history yet.</p>
+<% end %>

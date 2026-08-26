@@ -104,7 +104,9 @@ class Competition < ApplicationRecord
     upcoming_ids = []
     api_contests.each do |c|
       contest_status = c["contest_status"] || c["status"]
-      next if %w[Validated played].include?(contest_status)
+      next if contest_status.to_s.downcase.in?(%w[played validated])
+      match_api_id = c["match_uuid"].presence || c["game_id"].presence
+      next if match_api_id.present? && matches.exists?(api_id: match_api_id.to_s)
       next if api_id.present? && c["competition_id"].to_s != api_id
       upcoming_ids << c["contest_id"].to_s
       contest = contests.find_or_initialize_by(api_id: c["contest_id"].to_s)

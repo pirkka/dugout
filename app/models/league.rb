@@ -34,6 +34,7 @@ class League < ApplicationRecord
 
     active_competitions = []
     competitions.each do |competition|
+      next if competition.finished?
       had_contests = competition.refresh_upcoming_matches
       competition.compute_status!(had_api_contests: had_contests)
       active_competitions << competition if competition.active?

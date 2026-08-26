@@ -1,8 +1,8 @@
 namespace :players do
-  desc "Rebuild player versions and statuses from stored replay JSON"
+  desc "Rebuild match players and statuses from stored replay JSON"
   task backfill: :environment do
-    count = Match.rebuild_all_versions!
-    puts "Rebuilt #{count} player version(s) total"
+    count = Match.rebuild_all_match_players!
+    puts "Rebuilt #{count} match player(s) total"
   end
 
   desc "Recompute lifecycle status for all players"

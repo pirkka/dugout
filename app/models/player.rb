@@ -5,7 +5,7 @@ class Player < ApplicationRecord
   DEAD = "dead"
 
   belongs_to :team
-  has_many :player_versions, dependent: :destroy
+  has_many :match_players, dependent: :destroy
 
   validates :team_id, uniqueness: { scope: :number }, if: -> { number.present? }
   validates :name, presence: true
@@ -46,7 +46,7 @@ class Player < ApplicationRecord
   end
 
   def dead?
-    player_versions.exists?(status: DEAD) || player_versions.exists?(injury_type: DEAD)
+    match_players.exists?(status: DEAD) || match_players.exists?(injury_type: DEAD)
   end
 
   def self.free_number(team, number, excluding:)
@@ -63,19 +63,19 @@ class Player < ApplicationRecord
   #   the roster changes) or they have missed 2+ consecutive matches.
   # - active: everything else.
   def compute_status
-    return DEAD if player_versions.any? { |v| v.status == DEAD || v.injury_type == DEAD }
+    return DEAD if match_players.any? { |v| v.status == DEAD || v.injury_type == DEAD }
 
-    latest = player_versions.joins(:match)
+    latest = match_players.joins(:match)
       .order(Arel.sql("COALESCE(matches.started, matches.finished) DESC"))
       .first
     if latest&.injury_type == MNG && latest.match == team_latest_played_match
       return MNG
     end
 
-    match_ids = team.matches.joins(:player_versions).distinct
+    match_ids = team.matches.joins(:match_players).distinct
       .order(Arel.sql("COALESCE(matches.started, matches.finished)"))
       .pluck(:id)
-    played_ids = player_versions.pluck(:match_id)
+    played_ids = match_players.pluck(:match_id)
     first_index = match_ids.index { |id| played_ids.include?(id) }
     return ACTIVE unless first_index
 

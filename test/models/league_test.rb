@@ -195,6 +195,29 @@ class LeagueTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:ladder, original_ladder)
   end
 
+  test "refresh_from_api skips polling finished competitions" do
+    finished = @league.competitions.create!(name: "Old Season", slug: "old-season", api_id: "501", format: :round_robin, platform: :pc, status: :finished)
+    @league.competitions.create!(name: "Current Season", slug: "current-season", api_id: "502", format: :round_robin, platform: :pc)
+
+    data = api_response(name: "Test League", id: "fdjklsajkl4324")
+    original_league = CyanideApi::Client.instance_method(:league)
+    original_competitions = CyanideApi::Client.instance_method(:competitions)
+    original_upcoming = Competition.instance_method(:refresh_upcoming_matches)
+    CyanideApi::Client.define_method(:league) { |**| data }
+    CyanideApi::Client.define_method(:competitions) { |**| { "competitions" => [] } }
+
+    polled = []
+    Competition.define_method(:refresh_upcoming_matches) { polled << api_id; false }
+
+    assert @league.refresh_from_api
+    assert_equal %w[502], polled
+    assert_equal "finished", finished.reload.status
+  ensure
+    CyanideApi::Client.define_method(:league, original_league)
+    CyanideApi::Client.define_method(:competitions, original_competitions)
+    Competition.define_method(:refresh_upcoming_matches, original_upcoming)
+  end
+
   test "refresh_competitions creates competitions from API" do
     comps = [
       { "name" => "Season 15", "id" => 501, "format" => "RoundRobin" },

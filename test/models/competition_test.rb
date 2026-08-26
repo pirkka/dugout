@@ -369,6 +369,54 @@ class CompetitionTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:contests, original)
   end
 
+  test "refresh_upcoming_matches skips contests whose match already exists and removes stale contest" do
+    @competition.contests.create!(api_id: "cn-played", round: 4, status: "scheduled")
+    @competition.matches.create!(api_id: "abc-123", started: Time.zone.parse("2026-08-23 12:44:10"), round: 4)
+    api_contests = [
+      { "contest_id" => "cn-played", "round" => 4, "status" => "scheduled", "match_uuid" => "abc-123", "opponents" => [] },
+      { "contest_id" => "cn-fresh", "round" => 5, "status" => "scheduled", "match_uuid" => nil, "opponents" => [] }
+    ]
+    original = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "upcoming_matches" => api_contests } }
+
+    assert @competition.refresh_upcoming_matches
+    assert_equal 1, @competition.contests.count
+    assert_equal "cn-fresh", @competition.contests.first.api_id
+    refute @competition.contests.exists?(api_id: "cn-played")
+  ensure
+    CyanideApi::Client.define_method(:contests, original)
+  end
+
+  test "refresh_upcoming_matches keeps contests whose match does not exist yet" do
+    api_contests = [
+      { "contest_id" => "cn-in-progress", "round" => 4, "status" => "InProgress", "match_uuid" => "not-synced-yet", "opponents" => [] }
+    ]
+    original = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "upcoming_matches" => api_contests } }
+
+    assert @competition.refresh_upcoming_matches
+    assert_equal 1, @competition.contests.count
+    assert_equal "cn-in-progress", @competition.contests.first.api_id
+  ensure
+    CyanideApi::Client.define_method(:contests, original)
+  end
+
+  test "refresh_upcoming_matches skips played contests regardless of case" do
+    api_contests = [
+      { "contest_id" => "cn-001", "round" => 3, "status" => "Played", "opponents" => [] },
+      { "contest_id" => "cn-002", "round" => 3, "status" => "VALIDATED", "opponents" => [] },
+      { "contest_id" => "cn-003", "round" => 3, "status" => "Scheduled", "opponents" => [] }
+    ]
+    original = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "upcoming_matches" => api_contests } }
+
+    assert @competition.refresh_upcoming_matches
+    assert_equal 1, @competition.contests.count
+    assert_equal "cn-003", @competition.contests.first.api_id
+  ensure
+    CyanideApi::Client.define_method(:contests, original)
+  end
+
   test "remove_duplicate_matches keeps only newest match for each team pairing" do
     home = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "id-101")
     away = Team.create!(name: "Razorback Raiders", slug: "razorback-raiders", api_id: "id-102")

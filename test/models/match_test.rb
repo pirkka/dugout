@@ -113,14 +113,14 @@ class MatchTest < ActiveSupport::TestCase
     assert_equal({ uploaded: 0, skipped: 0 }, Match.upload_replay_jsons([nil]))
   end
 
-  test "record_player_versions! creates versions from new format json" do
+  test "record_match_players! creates match players from new format json" do
     match = matches(:season_opener)
-    count = match.record_player_versions!(new_format_json)
+    count = match.record_match_players!(new_format_json)
 
     assert_equal 3, count
-    assert_equal 3, match.player_versions.count
+    assert_equal 3, match.match_players.count
 
-    home = match.player_versions.find_by(name: "Ilona 'The Queen'")
+    home = match.match_players.find_by(name: "Ilona 'The Queen'")
     assert_equal teams(:cackling_furies), home.player.team
     assert_equal 1, home.number
     assert_equal "Black Orc", home.kind
@@ -129,81 +129,84 @@ class MatchTest < ActiveSupport::TestCase
     assert_equal 1650, home.team_value
     assert_equal "new", home.format
 
-    away = match.player_versions.find_by(name: "Ratty")
+    away = match.match_players.find_by(name: "Ratty")
     assert_equal teams(:razorback_raiders), away.player.team
     assert_equal 1, away.number
   end
 
-  test "record_player_versions! creates versions from old format json with away offset" do
+  test "record_match_players! creates match players from old format json with away offset" do
     match = matches(:season_opener)
-    count = match.record_player_versions!(old_format_json)
+    count = match.record_match_players!(old_format_json)
 
     assert_equal 2, count
 
-    home = match.player_versions.find_by(name: "Ilona 'The Queen'")
+    home = match.match_players.find_by(name: "Ilona 'The Queen'")
     assert_equal teams(:cackling_furies), home.player.team
     assert_equal 1, home.number
     assert_equal 14, home.player_type
     assert_equal "old", home.format
 
-    away = match.player_versions.find_by(name: "Ratty")
+    away = match.match_players.find_by(name: "Ratty")
     assert_equal teams(:razorback_raiders), away.player.team
     assert_equal 7, away.number
   end
 
-  test "record_player_versions! replaces versions on reprocess" do
+  test "record_match_players! replaces match players on reprocess" do
     match = matches(:season_opener)
-    match.record_player_versions!(new_format_json)
-    match.record_player_versions!(new_format_json)
+    match.record_match_players!(new_format_json)
+    match.record_match_players!(new_format_json)
 
-    assert_equal 3, match.player_versions.count
-    assert_equal 3, match.reload.player_versions.count
+    assert_equal 3, match.match_players.count
+    assert_equal 3, match.reload.match_players.count
   end
 
-  test "record_player_versions! keeps player identity across matches" do
+  test "record_match_players! keeps player identity across matches" do
     match = matches(:season_opener)
     other = matches(:final_showdown)
     MatchTeam.create!(match: other, team: teams(:cackling_furies), home: true)
     MatchTeam.create!(match: other, team: teams(:razorback_raiders), home: false)
 
-    match.record_player_versions!(new_format_json)
-    other.record_player_versions!(new_format_json)
+    match.record_match_players!(new_format_json)
+    other.record_match_players!(new_format_json)
 
     ilona = Player.find_by(team: teams(:cackling_furies), name: "Ilona 'The Queen'")
-    assert_equal 2, ilona.player_versions.count
-    assert_includes ilona.player_versions.pluck(:match_id), other.id
+    assert_equal 2, ilona.match_players.count
+    assert_includes ilona.match_players.pluck(:match_id), other.id
   end
 
-  test "record_player_versions! captures the severest injury_type from highlights" do
+  test "record_match_players! captures the severest injury_type from highlights" do
     match = matches(:season_opener)
     json = new_format_json
     json["highlights"] = [
-      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "knocked_out" },
-      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "mng" },
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "knocked_out", "injury_detail" => "Concussion" },
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "mng", "injury_detail" => "Fractured Arm" },
       { "event" => "touch_down", "player_id" => "1" }
     ]
 
-    match.record_player_versions!(json)
+    match.record_match_players!(json)
 
-    injured = match.player_versions.find_by(name: "Trinity 'The Rookie'")
+    injured = match.match_players.find_by(name: "Trinity 'The Rookie'")
     assert_equal Player::MNG, injured.injury_type
-    assert_nil match.player_versions.find_by(name: "Ilona 'The Queen'").injury_type
+    assert_equal "Fractured Arm", injured.injury_detail
+    assert_nil match.match_players.find_by(name: "Ilona 'The Queen'").injury_type
   end
 
-  test "record_player_versions! marks dead players with the highest priority" do
+  test "record_match_players! marks dead players with the highest priority" do
     match = matches(:season_opener)
     json = new_format_json
     json["highlights"] = [
-      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "dead" },
-      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "mng" }
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "dead", "injury_detail" => "Skull fracture" },
+      { "event" => "injury_caused", "injured_player_id" => "2", "injury_type" => "mng", "injury_detail" => "Fractured Arm" }
     ]
 
-    match.record_player_versions!(json)
+    match.record_match_players!(json)
 
-    assert_equal Player::DEAD, match.player_versions.find_by(name: "Trinity 'The Rookie'").injury_type
+    dead_player = match.match_players.find_by(name: "Trinity 'The Rookie'")
+    assert_equal Player::DEAD, dead_player.injury_type
+    assert_equal "Skull fracture", dead_player.injury_detail
   end
 
-  test "record_player_versions! handles renumbering across matches" do
+  test "record_match_players! handles renumbering across matches" do
     match = matches(:season_opener)
     other = matches(:final_showdown)
     MatchTeam.create!(match: other, team: teams(:cackling_furies), home: true)
@@ -222,29 +225,29 @@ class MatchTest < ActiveSupport::TestCase
       "3" => { "name" => "Newcomer", "kind" => "Goblin", "skills" => [], "status" => "normal" }
     }
 
-    match.record_player_versions!(first)
-    other.record_player_versions!(second)
+    match.record_match_players!(first)
+    other.record_match_players!(second)
 
     ilona = Player.find_by(team: teams(:cackling_furies), name: "Ilona 'The Queen'")
-    assert_equal 2, ilona.player_versions.count
+    assert_equal 2, ilona.match_players.count
 
     dahmer = Player.find_by(team: teams(:cackling_furies), name: "Jeffrey Dahmer")
     assert_equal 2, dahmer.number
-    assert_equal 2, dahmer.player_versions.count
-    assert_equal ["Block"], dahmer.player_versions.find_by(match: other).skills
+    assert_equal 2, dahmer.match_players.count
+    assert_equal ["Block"], dahmer.match_players.find_by(match: other).skills
 
     departed = Player.find_by(team: teams(:cackling_furies), name: "Departed")
     assert_nil departed.number
-    assert_equal 1, departed.player_versions.count
+    assert_equal 1, departed.match_players.count
 
     assert_equal 3, Player.find_by(team: teams(:cackling_furies), name: "Newcomer").number
   end
 
-  test "record_player_versions! is a no-op without player data" do
+  test "record_match_players! is a no-op without player data" do
     match = matches(:season_opener)
-    assert_equal 0, match.record_player_versions!({ "info" => { "type" => "main" } })
-    assert_equal 0, match.record_player_versions!(nil)
-    assert_equal 0, match.player_versions.count
+    assert_equal 0, match.record_match_players!({ "info" => { "type" => "main" } })
+    assert_equal 0, match.record_match_players!(nil)
+    assert_equal 0, match.match_players.count
   end
 
   test "upload_replay_json creates player versions" do
@@ -254,7 +257,7 @@ class MatchTest < ActiveSupport::TestCase
     file.rewind
 
     assert match.upload_replay_json(file)
-    assert_equal 3, match.player_versions.count
+    assert_equal 3, match.match_players.count
   ensure
     file&.close
     file&.unlink
@@ -267,7 +270,7 @@ class MatchTest < ActiveSupport::TestCase
 
     result = Match.upload_replay_jsons([file])
     assert_equal({ uploaded: 1, skipped: 0 }, result)
-    assert_equal 3, matches(:season_opener).reload.player_versions.count
+    assert_equal 3, matches(:season_opener).reload.match_players.count
   ensure
     file&.close
     file&.unlink
