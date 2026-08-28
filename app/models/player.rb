@@ -6,6 +6,8 @@ class Player < ApplicationRecord
 
   belongs_to :team
   has_many :match_players, dependent: :destroy
+  has_many :highlights, through: :match_players
+  has_many :injury_highlights, through: :match_players, source: :injury_highlights
 
   validates :team_id, uniqueness: { scope: :number }, if: -> { number.present? }
   validates :name, presence: true

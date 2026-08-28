@@ -14,26 +14,26 @@
 <h2>Highlights</h2>
 <table>
   <tr><th>Turn</th><th>Player</th><th>Location</th><th>Type</th><th>Details</th></tr>
-<% replay['highlights'].each do |h| %>
+<% @match.highlights.each do |h| %>
   <tr>
   <td nowrap>
-  <%= h['turn'] %>/<%= h['team'] %>
+  <%= h.turn %>/<%= h.team %>
   </td>
   <td>
-    <%= h['player_name'] %>
+    <%= h.match_player&.name %>
   </td>
   <td nowrap>
-    <%= h['to'] && h['to'].map{|k,v| v }.join(',') %>
+    <%= h.to && h.to.values.join(',') %>
     ➡️
-    <%= h['new_position'] && h['new_position'].map{|k,v| v }.join(',') %>
+    <%= h.new_position && h.new_position.values.join(',') %>
   </td>
   <td>
-  <%= h['event'] %>
+  <%= h.event %>
   </td>
   <td>
-  <% if h['event'] == 'injury_caused' %>
-      <%= h['injured_player_name']+ ' ' + h['injury_type'] %>
-<% end %>
+  <% if h.event == 'injury_caused' %>
+      <%= h.injured_match_player&.name %> <%= h.data&.dig('injury_type') %>
+  <% end %>
   </td>
   </tr>
 <% end %>

@@ -15,6 +15,7 @@ class Match < ApplicationRecord
   has_many :match_teams, dependent: :destroy
   has_many :teams, through: :match_teams
   has_many :match_players, dependent: :destroy
+  has_many :highlights, dependent: :destroy
 
   def home_team
     match_teams.find_by(home: true)&.team
@@ -124,13 +125,7 @@ class Match < ApplicationRecord
   end
 
   def key_highlights
-    all_highlights = []
-    replay_json&.dig("highlights")&.each do |highlight|
-      if highlight['event'] == "touch_down"
-        all_highlights << highlight
-      end
-    end
-    all_highlights
+    highlights.touchdowns
   end
 
   # Rebuilds match players for this match, then reprocesses both teams'
@@ -140,7 +135,8 @@ class Match < ApplicationRecord
     return 0 unless parsed.is_a?(Hash)
 
     transaction do
-      build_match_players!(parsed)
+      key_map = build_match_players!(parsed)
+      record_highlights!(parsed, key_map)
       affected_teams(parsed).compact.each { |team| self.class.rebuild_team_match_players!(team, except: id) }
       Player.find_each(&:refresh_status!)
       match_players.count
@@ -153,6 +149,7 @@ class Match < ApplicationRecord
     count = 0
     transaction do
       MatchPlayer.delete_all
+      Highlight.delete_all
       Player.delete_all
       Match.where.not(replay_json: nil)
         .order(Arel.sql("COALESCE(matches.started, matches.finished)"))
@@ -173,10 +170,13 @@ class Match < ApplicationRecord
 
   def build_match_players!(parsed)
     match_players.destroy_all
+    highlights.destroy_all
     if parsed.dig("teams", "home", "players").is_a?(Hash)
       record_match_players_new_format(parsed)
     elsif parsed.dig("info", "players").is_a?(Hash)
       record_match_players_old_format(parsed)
+    else
+      {}
     end
   end
 
@@ -211,8 +211,26 @@ class Match < ApplicationRecord
     injuries
   end
 
+  def record_highlights!(parsed, key_map)
+    Array(parsed["highlights"]).each do |h|
+      match_player = key_map[h["player_id"]&.to_s]
+      injured_mp = key_map[h["injured_player_id"]&.to_s] if h["injured_player_id"]
+
+      highlights.create!(
+        match_player: match_player,
+        injured_match_player: injured_mp,
+        event: h["event"],
+        turn: h["turn"],
+        team: h["team"],
+        to: h["to"],
+        new_position: h["new_position"],
+        data: h
+      )
+    end
+  end
+
   def record_match_players_new_format(parsed)
-    count = 0
+    key_map = {}
     injuries = injuries_by_key(parsed)
 
     parsed["teams"].each do |side, team_data|
@@ -230,7 +248,7 @@ class Match < ApplicationRecord
 
         injury = injuries[key]
 
-        match_players.create!(
+        mp = match_players.create!(
           player: player,
           name: player_data["name"],
           number: number,
@@ -247,15 +265,15 @@ class Match < ApplicationRecord
             "player" => player_data
           }
         )
-        count += 1
+        key_map[key.to_s] = mp
       end
     end
 
-    count
+    key_map
   end
 
   def record_match_players_old_format(parsed)
-    count = 0
+    key_map = {}
     teams_by_slot = { "0" => home_team, "1" => away_team }
 
     parsed["info"]["players"].each do |key, player_data|
@@ -270,7 +288,7 @@ class Match < ApplicationRecord
       player = Player.resolve(team, number: number, name: player_data["name"])
       next unless player
 
-      match_players.create!(
+      mp = match_players.create!(
         player: player,
         name: player_data["name"],
         number: number,
@@ -282,9 +300,9 @@ class Match < ApplicationRecord
           "player" => player_data
         }
       )
-      count += 1
+      key_map[key.to_s] = mp
     end
 
-    count
+    key_map
   end
 end

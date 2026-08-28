@@ -25,9 +25,9 @@ at
 <% if @match.replay_json.present? %>
     <% @match.key_highlights.each do |h| %>
       <p>
-          turn <%= h['turn'] %>
-            <%= h['event'].gsub('_','') %>
-            <%= h['player_name'] %>
+          turn <%= h.turn %>
+            <%= h.event.tr('_','') %>
+            <%= h.match_player&.name %>
       </p>
     <% end %>
 <% end %>

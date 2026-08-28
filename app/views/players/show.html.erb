@@ -38,3 +38,44 @@
 <% else %>
   <p>No match history yet.</p>
 <% end %>
+
+<h2>Highlights</h2>
+<% if @highlights.any? %>
+  <% player_mp_ids = @player.match_players.pluck(:id).to_set %>
+  <table>
+    <thead>
+      <tr>
+        <th>Match</th>
+        <th>Turn</th>
+        <th>Event</th>
+        <th>Role</th>
+        <th>Target</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @highlights.each do |h| %>
+        <tr>
+          <td><%= link_to h.match.started&.strftime("%B %d, %Y") || "TBD", h.match %></td>
+          <td><%= h.turn %>/<%= h.team %></td>
+          <td><%= h.event.tr("_", " ") %></td>
+          <td>
+            <% if player_mp_ids.include?(h.match_player_id) %>
+              Actor
+            <% elsif player_mp_ids.include?(h.injured_match_player_id) %>
+              Injured
+            <% end %>
+          </td>
+          <td>
+            <% if player_mp_ids.include?(h.match_player_id) %>
+              <%= h.target_player_name %>
+            <% elsif player_mp_ids.include?(h.injured_match_player_id) %>
+              <%= h.match_player&.name %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No highlights yet.</p>
+<% end %>

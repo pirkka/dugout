@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_140130) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_133000) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -74,6 +74,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_140130) do
     t.index ["away_team_id"], name: "index_contests_on_away_team_id"
     t.index ["competition_id"], name: "index_contests_on_competition_id"
     t.index ["home_team_id"], name: "index_contests_on_home_team_id"
+  end
+
+  create_table "highlights", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.json "data"
+    t.string "event", null: false
+    t.integer "injured_match_player_id"
+    t.integer "match_id", null: false
+    t.integer "match_player_id"
+    t.json "new_position"
+    t.string "team"
+    t.json "to"
+    t.integer "turn"
+    t.datetime "updated_at", null: false
+    t.index ["injured_match_player_id"], name: "index_highlights_on_injured_match_player_id"
+    t.index ["match_id", "event"], name: "index_highlights_on_match_id_and_event"
+    t.index ["match_id"], name: "index_highlights_on_match_id"
+    t.index ["match_player_id"], name: "index_highlights_on_match_player_id"
   end
 
   create_table "leagues", force: :cascade do |t|
@@ -216,6 +234,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_140130) do
   add_foreign_key "contests", "competitions"
   add_foreign_key "contests", "teams", column: "away_team_id"
   add_foreign_key "contests", "teams", column: "home_team_id"
+  add_foreign_key "highlights", "match_players"
+  add_foreign_key "highlights", "match_players", column: "injured_match_player_id"
+  add_foreign_key "highlights", "matches"
   add_foreign_key "match_players", "matches"
   add_foreign_key "match_players", "players"
   add_foreign_key "match_teams", "matches"
