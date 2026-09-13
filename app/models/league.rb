@@ -10,11 +10,17 @@ class League < ApplicationRecord
   enum :game_version, { bb1: 0, bb2: 1, bb3: 2 }
 
   FORMAT_MAP = {
-    "RoundRobin" => :round_robin,
-    "Knockout" => :single_elimination,
-    "Ladder" => :ladder,
-    "Wissen" => :swiss
+    "roundrobin" => :round_robin,
+    "knockout" => :single_elimination,
+    "singleelimination" => :single_elimination,
+    "ladder" => :ladder,
+    "swiss" => :swiss,
+    "wissen" => :swiss
   }.freeze
+
+  def normalize_format(raw)
+    FORMAT_MAP.fetch(raw.to_s.downcase.delete("_-"), :round_robin)
+  end
 
   def refresh_from_api
     client = CyanideApi::Client.new
@@ -68,7 +74,7 @@ class League < ApplicationRecord
       competition.update!(
         name: comp["name"],
         slug: comp["name"].parameterize,
-        format: FORMAT_MAP.fetch(comp["format"], :round_robin),
+        format: normalize_format(comp["format"]),
         platform: self.platform,
         api_data: comp
       )

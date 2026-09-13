@@ -75,7 +75,7 @@ class Competition < ApplicationRecord
       match_hash = match.calculate_match_hash
       match.update!(match_hash: match_hash)
     end
-    remove_duplicate_matches if format != :ladder
+    remove_duplicate_matches unless ladder?
     refresh_standings if league.game_version.to_sym == :bb3
     calculate_standings if league.game_version.to_sym == :bb2
     calculate_team_stats
@@ -89,6 +89,7 @@ class Competition < ApplicationRecord
   end
 
   def refresh_upcoming_matches
+    return false if ladder?
     client = CyanideApi::Client.new
     data = client.contests(
       league_name: league.name,

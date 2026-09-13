@@ -102,7 +102,7 @@ module CyanideApi
       uri = URI("#{base_url(game_version)}#{path}")
       uri.query = URI.encode_www_form(params) unless params.empty?
 
-      puts uri
+      Rails.logger.debug { uri.to_s.sub(@api_key.to_s, "[FILTERED]") }
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
@@ -110,7 +110,18 @@ module CyanideApi
       http.read_timeout = 10
 
       request = Net::HTTP::Get.new(uri)
-      response = http.request(request)
+
+      attempts = 0
+      begin
+        attempts += 1
+        response = http.request(request)
+      rescue Net::OpenTimeout, Net::ReadTimeout, Errno::ETIMEDOUT, SocketError, Errno::ECONNRESET => e
+        if attempts < 3
+          sleep(1 * attempts)
+          retry
+        end
+        raise Error, "API request timed out after #{attempts} attempts (#{uri.path}): #{e.message}"
+      end
 
       case response
       when Net::HTTPNotFound

@@ -132,12 +132,16 @@
         <% mts = match.match_teams.sort_by(&:id) %>
           <li>
             <%= link_to match.started.strftime("%B %d, %Y"), match %>:
-            <%= link_to mts[0].team.name, mts[0].team %>
-            <%= link_to "#{mts[0].score} - #{mts[1]&.score}", match %>
-            <% if mts[1] %>
-                <%= link_to mts[1].team.name, mts[1].team %>
+            <% if mts[0] %>
+              <%= link_to mts[0].team.name, mts[0].team %>
+              <%= link_to "#{mts[0].score} - #{mts[1]&.score}", match %>
+              <% if mts[1] %>
+                  <%= link_to mts[1].team.name, mts[1].team %>
+              <% else %>
+                N/A
+              <% end %>
             <% else %>
-              N/A
+              N/A vs N/A
             <% end %>
             <% if match.replay_json.present? %>
                 *
