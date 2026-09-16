@@ -55,13 +55,14 @@ table.departed tbody tr {
 ul {
     padding-left: 0px;
     list-style: none;
+    margin-top: 0;
 }
 
 li {
     text-decoration: none;
 }
 
-span {
+span.label {
     background-color: #602900;
     color: white;
     padding: 3px;
@@ -72,6 +73,7 @@ span {
     padding-bottom: 1px;
     vertical-align: 3px;
 }
+
 
 form.button_to {
     display: inline;
@@ -181,4 +183,8 @@ a {
 
 nav {
     font-size: 22px;
+}
+
+h5 {
+    margin-bottom: 0px;
 }

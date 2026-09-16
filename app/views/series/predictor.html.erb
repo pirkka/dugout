@@ -1,0 +1,72 @@
+<h1>Predictor: <%= @series.name %></h1>
+
+<div class="debug">
+  <strong>Debug links:</strong>
+  <%= link_to "series", @series %>
+  <%= link_to "league: #{@series.league.name}", @series.league %>
+  <%= link_to "Edit", edit_series_path(@series.slug) %>
+</div>
+
+<% team_count = @teams_json.size %>
+<% if team_count.zero? %>
+  <p>No teams in this series yet.</p>
+<% else %>
+
+<div data-controller="predictor"
+     data-predictor-cutoff="<%= @series.playoff_cutoff %>">
+  <script type="application/json" data-predictor-target="data">
+    <%= {
+      teams: @teams_json,
+      fixtures: @fixtures_json
+    }.to_json.html_safe %>
+  </script>
+
+
+  <h2>Final position odds</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th>Playoff Probability</th>
+        <% (1..team_count).each do |pos| %>
+          <th>#<%= pos %></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @series.series_teams.each do |st| %>
+        <tr>
+          <td nowrap><%= st.team.name %></td>
+          <td data-predictor-target="playoff" data-team="<%= st.team_id %>">—</td>
+          <% (1..team_count).each do |pos| %>
+            <td data-predictor-target="position" data-team="<%= st.team_id %>" data-position="<%= pos %>">—</td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h2>Upcoming Matches</h2>
+  <% if @fixtures_json.empty? %>
+    <p>No upcoming matches to predict.</p>
+  <% else %>
+    <% @fixtures_by_round = @fixtures_json.each_with_index.group_by { |f, _i| f[:round] } %>
+    <% @fixtures_by_round.keys.sort_by { |r| r ? r : Float::INFINITY }.each do |round| %>
+      <h5><%= round ? "Round #{round}" : "Round TBD" %></h5>
+      <ul>
+        <% @fixtures_by_round[round].each do |f, i| %>
+          <li>
+            <%= @teams_json[f[:home]][:name] %>
+            vs
+            <%= @teams_json[f[:away]][:name] %>
+            <% if f[:date] %><span>(<%= f[:date] %>)</span><% end %>
+            <input type="range" min="0" max="1" step="0.01" value="0.5"
+                   data-predictor-target="slider" data-index="<%= i %>">
+            <span class="odds" data-predictor-target="prob" data-index="<%= i %>">even</span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+</div>
+<% end %>

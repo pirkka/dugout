@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   post 'leagues' => 'leagues#create'
   get 'leagues/:slug' => 'leagues#show', as: :league
   get 'series/:slug' => 'series#show', as: :series
+  get 'series/:slug/predictor' => 'series#predictor', as: :predictor_series
   get 'series/:slug/edit' => 'series#edit', as: :edit_series
   patch 'series/:slug' => 'series#update'
   post 'leagues/:slug/series' => 'series#create', as: :league_series

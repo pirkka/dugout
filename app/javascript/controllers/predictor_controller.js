@@ -1,0 +1,208 @@
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+  static targets = ["data", "slider", "playoff", "position", "prob"]
+
+  EXACT_MAX_FIXTURES = 12
+  MC_CHUNK = 5000
+  MC_MAX = 50000
+  CONVERGENCE_EPSILON = 0.001
+
+  connect() {
+    const payload = JSON.parse(this.dataTarget.textContent)
+    this.teams = payload.teams
+    this.fixtures = payload.fixtures
+    this.cutoff = parseInt(this.element.dataset.predictorCutoff, 10) || null
+    this.values = this.sliderTargets.map((slider) => parseFloat(slider.value))
+    for (const slider of this.sliderTargets) {
+      slider.addEventListener("input", (event) => {
+        this.values[parseInt(event.currentTarget.dataset.index, 10)] = parseFloat(event.currentTarget.value)
+        this.scheduleRecompute()
+      })
+    }
+    this.recompute()
+  }
+
+  scheduleRecompute() {
+    clearTimeout(this.timer)
+    this.timer = setTimeout(() => this.recompute(), 50)
+  }
+
+  probs(index) {
+    const v = this.values[index]
+    if (v <= 0) return [0, 0, 1]
+    if (v >= 1) return [1, 0, 0]
+    const t = Math.abs(2 * v - 1)
+    const d = 0.33 * Math.exp(-2.0 * t * t)
+    return [v * (1 - d), d, (1 - v) * (1 - d)]
+  }
+
+  better(a, b) {
+    if (a.points !== b.points) return a.points > b.points
+    if (a.wins !== b.wins) return a.wins > b.wins
+    return a.tdDiff > b.tdDiff
+  }
+
+  positionsOf(scores) {
+    const positions = new Array(scores.length).fill(1)
+    for (let i = 0; i < scores.length; i++) {
+      for (let j = 0; j < scores.length; j++) {
+        if (i !== j && this.better(scores[j], scores[i])) positions[i]++
+      }
+    }
+    return positions
+  }
+
+  recompute() {
+    if (this.fixtures.length === 0) {
+      this.renderBlank()
+      return
+    }
+    const probs = this.fixtures.map((_, i) => this.probs(i))
+    const stats = this.fixtures.length <= this.EXACT_MAX_FIXTURES
+      ? this.solveExact(probs)
+      : this.solveMonteCarlo(probs)
+    this.render(stats)
+  }
+
+  renderBlank() {
+    for (const el of this.playoffTargets) el.textContent = "—"
+    for (const el of this.positionTargets) el.textContent = "—"
+    for (const el of this.probTargets) el.textContent = "—"
+  }
+
+  teamIndexFor(id) {
+    return this.teams.findIndex((t) => t.id === id)
+  }
+
+  render(stats) {
+    const total = stats.total
+    for (const el of this.playoffTargets) {
+      const idx = this.teamIndexFor(parseInt(el.dataset.team, 10))
+      const count = idx >= 0 ? stats.playoff[idx] : 0
+      el.textContent = total > 0 ? `${((count / total) * 100).toFixed(1)}%` : "—"
+    }
+    for (const el of this.positionTargets) {
+      const idx = this.teamIndexFor(parseInt(el.dataset.team, 10))
+      const pos = parseInt(el.dataset.position, 10)
+      const count = idx >= 0 ? stats.positions[idx][pos - 1] : 0
+      el.textContent = total > 0 ? `${((count / total) * 100).toFixed(1)}%` : "—"
+    }
+    for (let i = 0; i < this.sliderTargets.length; i++) {
+      const el = this.probTargets.find((el) => parseInt(el.dataset.index, 10) === i)
+      if (!el) continue
+      const p = this.probs(i)
+      el.textContent = `${Math.round(p[0] * 100)}/${Math.round(p[1] * 100)}/${Math.round(p[2] * 100)}`
+      if (this.values[i] < 0.5) el.textContent += " favor away"
+      else if (this.values[i] > 0.5) el.textContent += " favor home"
+      else el.textContent += " even"
+    }
+  }
+
+  solveExact(probs) {
+    const size = this.teams.length
+    const scores = this.teams.map((t) => ({ points: t.points, wins: t.wins, tdDiff: t.tdDiff }))
+    const playoff = new Array(size).fill(0)
+    const positions = Array.from({ length: size }, () => new Array(size).fill(0))
+    let total = 0
+
+    const dfs = (i, prob) => {
+      if (prob === 0) return
+      if (i === this.fixtures.length) {
+        total += prob
+        const ranks = this.positionsOf(scores)
+        for (let t = 0; t < size; t++) {
+          positions[t][ranks[t] - 1] += prob
+          if (this.cutoff && ranks[t] <= this.cutoff) playoff[t] += prob
+        }
+        return
+      }
+      const fixture = this.fixtures[i]
+      const [ph, pd, pa] = probs[i]
+      if (ph > 0) {
+        scores[fixture.home].points += 3
+        scores[fixture.home].wins += 1
+        dfs(i + 1, prob * ph)
+        scores[fixture.home].points -= 3
+        scores[fixture.home].wins -= 1
+      }
+      if (pd > 0) {
+        scores[fixture.home].points += 1
+        scores[fixture.away].points += 1
+        dfs(i + 1, prob * pd)
+        scores[fixture.home].points -= 1
+        scores[fixture.away].points -= 1
+      }
+      if (pa > 0) {
+        scores[fixture.away].points += 3
+        scores[fixture.away].wins += 1
+        dfs(i + 1, prob * pa)
+        scores[fixture.away].points -= 3
+        scores[fixture.away].wins -= 1
+      }
+    }
+
+    dfs(0, 1)
+    return { playoff, positions, total }
+  }
+
+  solveMonteCarlo(probs) {
+    const size = this.teams.length
+    const playoff = new Array(size).fill(0)
+    const positions = Array.from({ length: size }, () => new Array(size).fill(0))
+    const scores = this.teams.map((t) => ({ points: t.points, wins: t.wins, tdDiff: t.tdDiff }))
+    let total = 0
+    let previous = null
+
+    for (let run = 0; run < this.MC_MAX; run += this.MC_CHUNK) {
+      for (let n = 0; n < this.MC_CHUNK; n++) {
+        for (let t = 0; t < size; t++) {
+          scores[t].points = this.teams[t].points
+          scores[t].wins = this.teams[t].wins
+        }
+        for (let i = 0; i < this.fixtures.length; i++) {
+          const [ph, pd] = probs[i]
+          const fixture = this.fixtures[i]
+          const r = Math.random()
+          if (r < ph) {
+            scores[fixture.home].points += 3
+            scores[fixture.home].wins += 1
+          } else if (r < ph + pd) {
+            scores[fixture.home].points += 1
+            scores[fixture.away].points += 1
+          } else {
+            scores[fixture.away].points += 3
+            scores[fixture.away].wins += 1
+          }
+        }
+        const ranks = this.positionsOf(scores)
+        for (let t = 0; t < size; t++) {
+          positions[t][ranks[t] - 1]++
+          if (this.cutoff && ranks[t] <= this.cutoff) playoff[t]++
+        }
+        total++
+      }
+      if (previous && this.converged(previous, playoff, positions, total)) break
+      previous = {
+        playoff: playoff.slice(),
+        positions: positions.map((p) => p.slice()),
+        total,
+      }
+    }
+
+    return { playoff, positions, total }
+  }
+
+  converged(previous, playoff, positions, total) {
+    const size = this.teams.length
+    for (let t = 0; t < size; t++) {
+      const playoffDelta = Math.abs(playoff[t] / total - previous.playoff[t] / previous.total)
+      if (playoffDelta > this.CONVERGENCE_EPSILON) return false
+      for (let p = 0; p < size; p++) {
+        const delta = Math.abs(positions[t][p] / total - previous.positions[t][p] / previous.total)
+        if (delta > this.CONVERGENCE_EPSILON) return false
+      }
+    }
+    return true
+  }
+}

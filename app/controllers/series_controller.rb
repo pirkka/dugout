@@ -1,6 +1,6 @@
 class SeriesController < ApplicationController
   def show
-    @series = Series.includes(:league, competitions: [{ competition_teams: :team }, { matches: { match_teams: :team } }, { contests: [:home_team, :away_team] }], series_teams: :team).find_by(slug: params[:slug])
+    @series = Series.includes(:league, competitions: [ { competition_teams: :team }, { matches: { match_teams: :team } }, { contests: [ :home_team, :away_team ] } ], series_teams: :team).find_by(slug: params[:slug])
     if @series.nil?
       render file: "#{Rails.root}/public/404.html", status: :not_found
     else
@@ -34,6 +34,26 @@ class SeriesController < ApplicationController
     else
       flash.now[:alert] = @series.errors.full_messages.join(", ")
       render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def predictor
+    @series = Series.includes(:league, competitions: { contests: [ :home_team, :away_team ] }, series_teams: :team).find_by(slug: params[:slug])
+    if @series.nil?
+      render file: "#{Rails.root}/public/404.html", status: :not_found
+    else
+      @league = @series.league
+      @upcoming = @series.competitions.flat_map(&:contests).select { |c| c.home_team && c.away_team }.sort_by { |c| c.match_date || Time.at(0) }
+      @teams_json = @series.series_teams.map do |st|
+        { id: st.team_id, name: st.team.name, points: st.points, wins: st.wins, td_diff: (st.touchdowns_made || 0) - (st.touchdowns_sustained || 0) }
+      end
+      @team_indices = @teams_json.each_with_index.to_h { |t, i| [ t[:id], i ] }
+      @fixtures_json = @upcoming.filter_map do |c|
+        home = @team_indices[c.home_team_id]
+        away = @team_indices[c.away_team_id]
+        next unless home && away
+        { home: home, away: away, date: c.match_date&.to_date&.iso8601, round: c.round }
+      end
     end
   end
 
