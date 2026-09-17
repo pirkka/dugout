@@ -133,6 +133,7 @@ export default class extends Controller {
         el.textContent = total > 0 ? `${((sum / total) * 100).toFixed(1)}%` : "—"
       }
     }
+    this.sortRowsByPlayoff(stats, total)
     for (let i = 0; i < this.sliderTargets.length; i++) {
       const el = this.probTargets.find((el) => parseInt(el.dataset.index, 10) === i)
       if (!el) continue
@@ -143,6 +144,22 @@ export default class extends Controller {
         wp.textContent = `${Math.round(share * 100)}% win`
       }
     }
+  }
+
+  sortRowsByPlayoff(stats, total) {
+    const tbody = this.element.querySelector("tbody")
+    if (!tbody) return
+    const rows = Array.from(tbody.querySelectorAll("tr[data-team]"))
+    const originalOrder = new Map(rows.map((row, i) => [row.dataset.team, i]))
+    rows.sort((a, b) => {
+      const idxA = this.teamIndexFor(parseInt(a.dataset.team, 10))
+      const idxB = this.teamIndexFor(parseInt(b.dataset.team, 10))
+      const probA = idxA >= 0 ? stats.playoff[idxA] / total : 0
+      const probB = idxB >= 0 ? stats.playoff[idxB] / total : 0
+      if (probA !== probB) return probB - probA
+      return originalOrder.get(a.dataset.team) - originalOrder.get(b.dataset.team)
+    })
+    for (const row of rows) tbody.appendChild(row)
   }
 
   solveExact(entries) {

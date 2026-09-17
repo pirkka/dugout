@@ -37,7 +37,7 @@
     </thead>
     <tbody>
       <% @series.series_teams.each do |st| %>
-        <tr>
+        <tr data-team="<%= st.team_id %>">
           <td nowrap><%= st.team.name %></td>
           <td data-predictor-target="playoff" data-team="<%= st.team_id %>">—</td>
           <% td = (st.touchdowns_made || 0) - (st.touchdowns_sustained || 0) %>
