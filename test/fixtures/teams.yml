@@ -2,8 +2,10 @@ cackling_furies:
   name: Cackling Furies
   slug: cackling-furies
   api_id: "t001"
+  race: Skaven
 
 razorback_raiders:
   name: Razorback Raiders
   slug: razorback-raiders
   api_id: "t002"
+  race: Human

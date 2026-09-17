@@ -188,3 +188,17 @@ nav {
 h5 {
     margin-bottom: 0px;
 }
+
+.fixture {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 2px;
+    padding: 4px 0;
+}
+.fixture__name--home, .fixture__race--home { text-align: left; }
+.fixture__name--away, .fixture__race--away { text-align: right; }
+.fixture__race { font-size: 14px; color: #8a6a4a; }
+.fixture__odds { text-align: center; }
+.fixture__slider { width: 100%; }

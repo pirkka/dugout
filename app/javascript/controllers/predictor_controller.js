@@ -16,13 +16,13 @@ export default class extends Controller {
     this.cutoff = parseInt(this.element.dataset.predictorCutoff, 10) || null
     this.values = []
     for (const slider of this.sliderTargets) {
-      this.values[parseInt(slider.dataset.index, 10)] = parseFloat(slider.value)
+      this.values[parseInt(slider.dataset.index, 10)] = 1 - parseFloat(slider.value)
     }
     this.touched = new Set()
     for (const slider of this.sliderTargets) {
       slider.addEventListener("input", (event) => {
         const index = parseInt(event.currentTarget.dataset.index, 10)
-        this.values[index] = parseFloat(event.currentTarget.value)
+        this.values[index] = 1 - parseFloat(event.currentTarget.value)
         this.touched.add(index)
         this.scheduleRecompute()
       })

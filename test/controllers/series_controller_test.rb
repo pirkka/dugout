@@ -15,6 +15,8 @@ class SeriesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Cackling Furies/, response.body)
     assert_match(/Razorback Raiders/, response.body)
     assert_match(/"round":3/, response.body)
+    assert_select ".fixture__race", text: "Skaven"
+    assert_select ".fixture__race", text: "Human"
   end
 
   test "predictor returns 404 for unknown series" do
@@ -30,8 +32,10 @@ class SeriesControllerTest < ActionDispatch::IntegrationTest
     get predictor_series_path(series(:rebbl_season_15).slug)
     assert_response :success
     assert_select "h5", text: "Round 4"
-    assert_select "input[type=range][value='1']"
+    assert_select "input[type=range][value='0']"
     assert_match(/"ai":true/, response.body)
-    assert_match(/Cackling Furies vs AI/, response.body)
+    assert_select ".fixture__name", text: "Cackling Furies"
+    assert_select ".fixture__name", text: "CPU"
+    assert_select ".fixture__race", text: "Skaven"
   end
 end

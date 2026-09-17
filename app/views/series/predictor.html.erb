@@ -58,13 +58,14 @@
       <h5><%= round ? "Round #{round}" : "Round TBD" %></h5>
       <ul>
         <% @fixtures_by_round[round].each do |f, i| %>
-          <li style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 60%;"><%= f[:home].nil? ? "AI" : @teams_json[f[:home]][:name] %> vs <%= f[:away].nil? ? "AI" : @teams_json[f[:away]][:name] %></span>
-            <span style="display: inline-flex; justify-content: space-between; align-items: center; gap: 10px; width: 40%;">
-              <input type="range" min="0" max="1" step="0.01" value="<%= f[:ai] ? (f[:home].nil? ? 0 : 1) : 0.5 %>"
-                     data-predictor-target="slider" data-index="<%= i %>">
-              <span class="odds" data-predictor-target="prob" data-index="<%= i %>">even</span>
-            </span>
+          <li class="fixture">
+            <span class="fixture__name fixture__name--home"><%= f[:home].nil? ? "CPU" : @teams_json[f[:home]][:name] %></span>
+            <input class="fixture__slider" type="range" min="0" max="1" step="0.01" value="<%= f[:ai] ? (f[:home].nil? ? 1 : 0) : 0.5 %>"
+                   data-predictor-target="slider" data-index="<%= i %>">
+            <span class="fixture__name fixture__name--away"><%= f[:away].nil? ? "CPU" : @teams_json[f[:away]][:name] %></span>
+            <span class="fixture__race fixture__race--home"><%= f[:home].nil? ? "" : @teams_json[f[:home]][:race] %></span>
+            <span class="fixture__odds" data-predictor-target="prob" data-index="<%= i %>">even</span>
+            <span class="fixture__race fixture__race--away"><%= f[:away].nil? ? "" : @teams_json[f[:away]][:race] %></span>
           </li>
         <% end %>
       </ul>

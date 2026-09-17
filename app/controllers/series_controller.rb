@@ -45,7 +45,7 @@ class SeriesController < ApplicationController
       @league = @series.league
       @upcoming = @series.competitions.flat_map(&:contests).select { |c| c.home_team || c.away_team }.sort_by { |c| c.match_date || Time.at(0) }
       @teams_json = @series.series_teams.map do |st|
-        { id: st.team_id, name: st.team.name, points: st.points, wins: st.wins, td_diff: (st.touchdowns_made || 0) - (st.touchdowns_sustained || 0) }
+        { id: st.team_id, name: st.team.name, race: st.team.race, points: st.points, wins: st.wins, td_diff: (st.touchdowns_made || 0) - (st.touchdowns_sustained || 0) }
       end
       @team_indices = @teams_json.each_with_index.to_h { |t, i| [ t[:id], i ] }
       @fixtures_json = @upcoming.filter_map do |c|
