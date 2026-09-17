@@ -76,7 +76,9 @@
             <input class="fixture__slider" type="range" min="0" max="1" step="0.01" value="<%= f[:ai] ? (f[:home].nil? ? 1 : 0) : 0.5 %>"
                    data-predictor-target="slider" data-index="<%= i %>">
             <div class="fixture__name fixture__name--away fixture__side--away"><%= f[:away].nil? ? "CPU" : @teams_json[f[:away]][:name] %></div>
-            <div class="fixture__odds" data-predictor-target="prob" data-index="<%= i %>">even</div>
+            <div class="fixture__winpct fixture__winpct--home fixture__side--home" data-predictor-target="winpct" data-index="<%= i %>" data-side="home"></div>
+            <div class="fixture__odds" data-predictor-target="prob" data-index="<%= i %>">—</div>
+            <div class="fixture__winpct fixture__winpct--away fixture__side--away" data-predictor-target="winpct" data-index="<%= i %>" data-side="away"></div>
           </li>
         <% end %>
       </ul>

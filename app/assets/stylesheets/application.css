@@ -201,7 +201,10 @@ h5 {
 .fixture__name--away { text-align: right; }
 .fixture__side--home { color: var(--home-color); }
 .fixture__side--away { color: var(--away-color); }
-.fixture__odds { text-align: center; grid-column: 2; }
+.fixture__winpct { font-size: 14px; }
+.fixture__winpct--home { text-align: left; }
+.fixture__winpct--away { text-align: right; }
+.fixture__odds { text-align: center; grid-column: 2; font-size: 14px; }
 .fixture__slider { width: 100%; }
 
 :root {

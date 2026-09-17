@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["data", "slider", "playoff", "position", "prob", "utility", "rowSum"]
+  static targets = ["data", "slider", "playoff", "position", "prob", "utility", "rowSum", "winpct"]
 
   EXACT_MAX_FIXTURES = 12
   MC_CHUNK = 5000
@@ -94,6 +94,7 @@ export default class extends Controller {
     for (const el of this.probTargets) el.textContent = "—"
     for (const el of this.utilityTargets) el.textContent = "—"
     for (const el of this.rowSumTargets) el.textContent = "—"
+    for (const el of this.winpctTargets) el.textContent = ""
   }
 
   teamIndexFor(id) {
@@ -135,13 +136,11 @@ export default class extends Controller {
       const el = this.probTargets.find((el) => parseInt(el.dataset.index, 10) === i)
       if (!el) continue
       const p = this.probs(i)
-      el.textContent = `${Math.round(p[0] * 100)}/${Math.round(p[1] * 100)}/${Math.round(p[2] * 100)}`
-      if (p[0] === 1) el.textContent += " home win"
-      else if (p[2] === 1) el.textContent += " away win"
-      else if (p[1] === 1) el.textContent += " draw"
-      else if (this.values[i] < 0.5) el.textContent += " favor away"
-      else if (this.values[i] > 0.5) el.textContent += " favor home"
-      else el.textContent += " even"
+      el.textContent = `${Math.round(p[1] * 100)}% draw`
+      for (const wp of this.winpctTargets.filter((wp) => parseInt(wp.dataset.index, 10) === i)) {
+        const share = wp.dataset.side === "home" ? p[0] : p[2]
+        wp.textContent = `${Math.round(share * 100)}% win`
+      }
     }
   }
 
