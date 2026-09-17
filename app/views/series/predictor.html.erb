@@ -27,6 +27,7 @@
     <thead>
       <tr>
         <th>Team</th>
+        <th nowrap>TD</th>
         <th>Playoff Probability</th>
         <% (1..team_count).each do |pos| %>
           <th>#<%= pos %></th>
@@ -37,6 +38,8 @@
       <% @series.series_teams.each do |st| %>
         <tr>
           <td nowrap><%= st.team.name %></td>
+          <% td = (st.touchdowns_made || 0) - (st.touchdowns_sustained || 0) %>
+          <td><%= td > 0 ? "+#{td}" : td %></td>
           <td data-predictor-target="playoff" data-team="<%= st.team_id %>">—</td>
           <% (1..team_count).each do |pos| %>
             <td data-predictor-target="position" data-team="<%= st.team_id %>" data-position="<%= pos %>">—</td>
@@ -55,14 +58,13 @@
       <h5><%= round ? "Round #{round}" : "Round TBD" %></h5>
       <ul>
         <% @fixtures_by_round[round].each do |f, i| %>
-          <li>
-            <%= @teams_json[f[:home]][:name] %>
-            vs
-            <%= @teams_json[f[:away]][:name] %>
-            <% if f[:date] %><span>(<%= f[:date] %>)</span><% end %>
-            <input type="range" min="0" max="1" step="0.01" value="0.5"
-                   data-predictor-target="slider" data-index="<%= i %>">
-            <span class="odds" data-predictor-target="prob" data-index="<%= i %>">even</span>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 60%;"><%= @teams_json[f[:home]][:name] %> vs <%= @teams_json[f[:away]][:name] %></span>
+            <span style="display: inline-flex; justify-content: space-between; align-items: center; gap: 10px; width: 40%;">
+              <input type="range" min="0" max="1" step="0.01" value="0.5"
+                     data-predictor-target="slider" data-index="<%= i %>">
+              <span class="odds" data-predictor-target="prob" data-index="<%= i %>">even</span>
+            </span>
           </li>
         <% end %>
       </ul>

@@ -14,9 +14,12 @@ export default class extends Controller {
     this.fixtures = payload.fixtures
     this.cutoff = parseInt(this.element.dataset.predictorCutoff, 10) || null
     this.values = this.sliderTargets.map((slider) => parseFloat(slider.value))
+    this.touched = new Set()
     for (const slider of this.sliderTargets) {
       slider.addEventListener("input", (event) => {
-        this.values[parseInt(event.currentTarget.dataset.index, 10)] = parseFloat(event.currentTarget.value)
+        const index = parseInt(event.currentTarget.dataset.index, 10)
+        this.values[index] = parseFloat(event.currentTarget.value)
+        this.touched.add(index)
         this.scheduleRecompute()
       })
     }
@@ -32,6 +35,7 @@ export default class extends Controller {
     const v = this.values[index]
     if (v <= 0) return [0, 0, 1]
     if (v >= 1) return [1, 0, 0]
+    if (v === 0.5 && this.touched.has(index)) return [0, 1, 0]
     const t = Math.abs(2 * v - 1)
     const d = 0.33 * Math.exp(-2.0 * t * t)
     return [v * (1 - d), d, (1 - v) * (1 - d)]
@@ -93,7 +97,10 @@ export default class extends Controller {
       if (!el) continue
       const p = this.probs(i)
       el.textContent = `${Math.round(p[0] * 100)}/${Math.round(p[1] * 100)}/${Math.round(p[2] * 100)}`
-      if (this.values[i] < 0.5) el.textContent += " favor away"
+      if (p[0] === 1) el.textContent += " home win"
+      else if (p[2] === 1) el.textContent += " away win"
+      else if (p[1] === 1) el.textContent += " draw"
+      else if (this.values[i] < 0.5) el.textContent += " favor away"
       else if (this.values[i] > 0.5) el.textContent += " favor home"
       else el.textContent += " even"
     }
@@ -122,9 +129,13 @@ export default class extends Controller {
       if (ph > 0) {
         scores[fixture.home].points += 3
         scores[fixture.home].wins += 1
+        scores[fixture.home].tdDiff += 1
+        scores[fixture.away].tdDiff -= 1
         dfs(i + 1, prob * ph)
         scores[fixture.home].points -= 3
         scores[fixture.home].wins -= 1
+        scores[fixture.home].tdDiff -= 1
+        scores[fixture.away].tdDiff += 1
       }
       if (pd > 0) {
         scores[fixture.home].points += 1
@@ -136,9 +147,13 @@ export default class extends Controller {
       if (pa > 0) {
         scores[fixture.away].points += 3
         scores[fixture.away].wins += 1
+        scores[fixture.away].tdDiff += 1
+        scores[fixture.home].tdDiff -= 1
         dfs(i + 1, prob * pa)
         scores[fixture.away].points -= 3
         scores[fixture.away].wins -= 1
+        scores[fixture.away].tdDiff -= 1
+        scores[fixture.home].tdDiff += 1
       }
     }
 
@@ -159,6 +174,7 @@ export default class extends Controller {
         for (let t = 0; t < size; t++) {
           scores[t].points = this.teams[t].points
           scores[t].wins = this.teams[t].wins
+          scores[t].tdDiff = this.teams[t].tdDiff
         }
         for (let i = 0; i < this.fixtures.length; i++) {
           const [ph, pd] = probs[i]
@@ -167,12 +183,16 @@ export default class extends Controller {
           if (r < ph) {
             scores[fixture.home].points += 3
             scores[fixture.home].wins += 1
+            scores[fixture.home].tdDiff += 1
+            scores[fixture.away].tdDiff -= 1
           } else if (r < ph + pd) {
             scores[fixture.home].points += 1
             scores[fixture.away].points += 1
           } else {
             scores[fixture.away].points += 3
             scores[fixture.away].wins += 1
+            scores[fixture.away].tdDiff += 1
+            scores[fixture.home].tdDiff -= 1
           }
         }
         const ranks = this.positionsOf(scores)
