@@ -42,7 +42,7 @@ export default class extends Controller {
   }
 
   initialScores() {
-    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdsMade: t.tdsMade, tdsSustained: t.tdsSustained }))
+    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdsMade: t.tdsMade, tdsSustained: t.tdsSustained, name: t.name }))
   }
 
   probs(index) {
@@ -59,7 +59,8 @@ export default class extends Controller {
     if (a.points !== b.points) return a.points > b.points
     if (a.wins !== b.wins) return a.wins > b.wins
     if (a.tdsMade !== b.tdsMade) return a.tdsMade > b.tdsMade
-    return (a.tdsMade - a.tdsSustained) > (b.tdsMade - b.tdsSustained)
+    if (a.tdsMade - a.tdsSustained !== b.tdsMade - b.tdsSustained) return (a.tdsMade - a.tdsSustained) > (b.tdsMade - b.tdsSustained)
+    return a.name < b.name
   }
 
   positionsOf(scores) {
