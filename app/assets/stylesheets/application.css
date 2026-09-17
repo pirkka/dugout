@@ -197,8 +197,7 @@ h5 {
     row-gap: 2px;
     padding: 4px 0;
 }
-.fixture__name--home, .fixture__race--home { text-align: left; }
-.fixture__name--away, .fixture__race--away { text-align: right; }
-.fixture__race { font-size: 14px; color: #8a6a4a; }
-.fixture__odds { text-align: center; }
+.fixture__name--home { text-align: left; }
+.fixture__name--away { text-align: right; }
+.fixture__odds { text-align: center; grid-column: 2; }
 .fixture__slider { width: 100%; }

@@ -15,8 +15,6 @@ class SeriesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Cackling Furies/, response.body)
     assert_match(/Razorback Raiders/, response.body)
     assert_match(/"round":3/, response.body)
-    assert_select ".fixture__race", text: "Skaven"
-    assert_select ".fixture__race", text: "Human"
   end
 
   test "predictor returns 404 for unknown series" do
@@ -36,6 +34,5 @@ class SeriesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/"ai":true/, response.body)
     assert_select ".fixture__name", text: "Cackling Furies"
     assert_select ".fixture__name", text: "CPU"
-    assert_select ".fixture__race", text: "Skaven"
   end
 end
