@@ -208,8 +208,8 @@ h5 {
 .fixture__slider { width: 100%; }
 
 :root {
-    --home-color: #2a5db0;
-    --away-color: #b03030;
+    --home-color: #602900;
+    --away-color: #862EA6;
 }
 
 .fixture__slider {
