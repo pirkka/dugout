@@ -43,16 +43,18 @@ class SeriesController < ApplicationController
       render file: "#{Rails.root}/public/404.html", status: :not_found
     else
       @league = @series.league
-      @upcoming = @series.competitions.flat_map(&:contests).select { |c| c.home_team && c.away_team }.sort_by { |c| c.match_date || Time.at(0) }
+      @upcoming = @series.competitions.flat_map(&:contests).select { |c| c.home_team || c.away_team }.sort_by { |c| c.match_date || Time.at(0) }
       @teams_json = @series.series_teams.map do |st|
         { id: st.team_id, name: st.team.name, points: st.points, wins: st.wins, td_diff: (st.touchdowns_made || 0) - (st.touchdowns_sustained || 0) }
       end
       @team_indices = @teams_json.each_with_index.to_h { |t, i| [ t[:id], i ] }
       @fixtures_json = @upcoming.filter_map do |c|
-        home = @team_indices[c.home_team_id]
-        away = @team_indices[c.away_team_id]
-        next unless home && away
-        { home: home, away: away, date: c.match_date&.to_date&.iso8601, round: c.round }
+        home = c.home_team && @team_indices[c.home_team_id]
+        away = c.away_team && @team_indices[c.away_team_id]
+        next if home.nil? && away.nil?
+        ai = c.home_team.nil? || c.away_team.nil?
+        next if !ai && (home.nil? || away.nil?)
+        { home: home, away: away, ai: ai, date: c.match_date&.to_date&.iso8601, round: c.round }
       end
     end
   end

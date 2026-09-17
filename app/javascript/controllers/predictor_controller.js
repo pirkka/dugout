@@ -7,13 +7,17 @@ export default class extends Controller {
   MC_CHUNK = 5000
   MC_MAX = 50000
   CONVERGENCE_EPSILON = 0.001
+  AI_TD_MARGIN = 2
 
   connect() {
     const payload = JSON.parse(this.dataTarget.textContent)
     this.teams = payload.teams
     this.fixtures = payload.fixtures
     this.cutoff = parseInt(this.element.dataset.predictorCutoff, 10) || null
-    this.values = this.sliderTargets.map((slider) => parseFloat(slider.value))
+    this.values = []
+    for (const slider of this.sliderTargets) {
+      this.values[parseInt(slider.dataset.index, 10)] = parseFloat(slider.value)
+    }
     this.touched = new Set()
     for (const slider of this.sliderTargets) {
       slider.addEventListener("input", (event) => {
@@ -29,6 +33,10 @@ export default class extends Controller {
   scheduleRecompute() {
     clearTimeout(this.timer)
     this.timer = setTimeout(() => this.recompute(), 50)
+  }
+
+  initialScores() {
+    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdDiff: t.tdDiff }))
   }
 
   probs(index) {
@@ -62,10 +70,14 @@ export default class extends Controller {
       this.renderBlank()
       return
     }
-    const probs = this.fixtures.map((_, i) => this.probs(i))
-    const stats = this.fixtures.length <= this.EXACT_MAX_FIXTURES
-      ? this.solveExact(probs)
-      : this.solveMonteCarlo(probs)
+    const entries = this.fixtures.map((fixture, index) => ({
+      fixture,
+      probs: this.probs(index),
+      human: fixture.ai ? (fixture.home === null ? fixture.away : fixture.home) : null,
+    }))
+    const stats = entries.length <= this.EXACT_MAX_FIXTURES
+      ? this.solveExact(entries)
+      : this.solveMonteCarlo(entries)
     this.render(stats)
   }
 
@@ -106,16 +118,16 @@ export default class extends Controller {
     }
   }
 
-  solveExact(probs) {
+  solveExact(entries) {
     const size = this.teams.length
-    const scores = this.teams.map((t) => ({ points: t.points, wins: t.wins, tdDiff: t.tdDiff }))
+    const scores = this.initialScores()
     const playoff = new Array(size).fill(0)
     const positions = Array.from({ length: size }, () => new Array(size).fill(0))
     let total = 0
 
     const dfs = (i, prob) => {
       if (prob === 0) return
-      if (i === this.fixtures.length) {
+      if (i === entries.length) {
         total += prob
         const ranks = this.positionsOf(scores)
         for (let t = 0; t < size; t++) {
@@ -124,8 +136,28 @@ export default class extends Controller {
         }
         return
       }
-      const fixture = this.fixtures[i]
-      const [ph, pd, pa] = probs[i]
+      const { fixture, probs, human } = entries[i]
+      const [ph, pd, pa] = probs
+      if (human !== null) {
+        const winProb = fixture.home === null ? pa : ph
+        const lossProb = fixture.home === null ? ph : pa
+        if (winProb > 0) {
+          scores[human].points += 3
+          scores[human].wins += 1
+          scores[human].tdDiff += this.AI_TD_MARGIN
+          dfs(i + 1, prob * winProb)
+          scores[human].points -= 3
+          scores[human].wins -= 1
+          scores[human].tdDiff -= this.AI_TD_MARGIN
+        }
+        if (pd > 0) {
+          scores[human].points += 1
+          dfs(i + 1, prob * pd)
+          scores[human].points -= 1
+        }
+        if (lossProb > 0) dfs(i + 1, prob * lossProb)
+        return
+      }
       if (ph > 0) {
         scores[fixture.home].points += 3
         scores[fixture.home].wins += 1
@@ -161,25 +193,37 @@ export default class extends Controller {
     return { playoff, positions, total }
   }
 
-  solveMonteCarlo(probs) {
+  solveMonteCarlo(entries) {
     const size = this.teams.length
     const playoff = new Array(size).fill(0)
     const positions = Array.from({ length: size }, () => new Array(size).fill(0))
-    const scores = this.teams.map((t) => ({ points: t.points, wins: t.wins, tdDiff: t.tdDiff }))
+    const base = this.initialScores()
+    const scores = base.map((s) => ({ ...s }))
     let total = 0
     let previous = null
 
     for (let run = 0; run < this.MC_MAX; run += this.MC_CHUNK) {
       for (let n = 0; n < this.MC_CHUNK; n++) {
         for (let t = 0; t < size; t++) {
-          scores[t].points = this.teams[t].points
-          scores[t].wins = this.teams[t].wins
-          scores[t].tdDiff = this.teams[t].tdDiff
+          scores[t].points = base[t].points
+          scores[t].wins = base[t].wins
+          scores[t].tdDiff = base[t].tdDiff
         }
-        for (let i = 0; i < this.fixtures.length; i++) {
-          const [ph, pd] = probs[i]
-          const fixture = this.fixtures[i]
+        for (let i = 0; i < entries.length; i++) {
+          const { fixture, probs, human } = entries[i]
+          const [ph, pd, pa] = probs
           const r = Math.random()
+          if (human !== null) {
+            const winProb = fixture.home === null ? pa : ph
+            if (r < winProb) {
+              scores[human].points += 3
+              scores[human].wins += 1
+              scores[human].tdDiff += this.AI_TD_MARGIN
+            } else if (r < winProb + pd) {
+              scores[human].points += 1
+            }
+            continue
+          }
           if (r < ph) {
             scores[fixture.home].points += 3
             scores[fixture.home].wins += 1
