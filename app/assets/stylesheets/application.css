@@ -62,7 +62,7 @@ li {
     text-decoration: none;
 }
 
-span.label {
+span {
     background-color: #602900;
     color: white;
     padding: 3px;
@@ -199,5 +199,51 @@ h5 {
 }
 .fixture__name--home { text-align: left; }
 .fixture__name--away { text-align: right; }
+.fixture__side--home { color: var(--home-color); }
+.fixture__side--away { color: var(--away-color); }
 .fixture__odds { text-align: center; grid-column: 2; }
 .fixture__slider { width: 100%; }
+
+:root {
+    --home-color: #2a5db0;
+    --away-color: #b03030;
+}
+
+.fixture__slider {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--away-color) var(--fill, 50%), var(--home-color) var(--fill, 50%));
+    outline: none;
+}
+.fixture__slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #602900;
+    cursor: pointer;
+}
+.fixture__slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #602900;
+    cursor: pointer;
+}
+.fixture__slider::-moz-range-track {
+    background: linear-gradient(to right, var(--away-color) var(--fill, 50%), var(--home-color) var(--fill, 50%));
+    height: 6px;
+    border-radius: 3px;
+}
+
+.utility td {
+    opacity: 0.45;
+    font-size: 14px;
+    font-style: italic;
+    border-top: 1px solid #ccc;
+}

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["data", "slider", "playoff", "position", "prob"]
+  static targets = ["data", "slider", "playoff", "position", "prob", "utility", "rowSum"]
 
   EXACT_MAX_FIXTURES = 12
   MC_CHUNK = 5000
@@ -20,14 +20,20 @@ export default class extends Controller {
     }
     this.touched = new Set()
     for (const slider of this.sliderTargets) {
+      this.updateSliderFill(slider)
       slider.addEventListener("input", (event) => {
         const index = parseInt(event.currentTarget.dataset.index, 10)
         this.values[index] = 1 - parseFloat(event.currentTarget.value)
         this.touched.add(index)
+        this.updateSliderFill(event.currentTarget)
         this.scheduleRecompute()
       })
     }
     this.recompute()
+  }
+
+  updateSliderFill(slider) {
+    slider.style.setProperty("--fill", `${parseFloat(slider.value) * 100}%`)
   }
 
   scheduleRecompute() {
@@ -36,7 +42,7 @@ export default class extends Controller {
   }
 
   initialScores() {
-    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdDiff: t.tdDiff }))
+    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdsMade: t.tdsMade, tdsSustained: t.tdsSustained }))
   }
 
   probs(index) {
@@ -52,7 +58,8 @@ export default class extends Controller {
   better(a, b) {
     if (a.points !== b.points) return a.points > b.points
     if (a.wins !== b.wins) return a.wins > b.wins
-    return a.tdDiff > b.tdDiff
+    if (a.tdsMade !== b.tdsMade) return a.tdsMade > b.tdsMade
+    return (a.tdsMade - a.tdsSustained) > (b.tdsMade - b.tdsSustained)
   }
 
   positionsOf(scores) {
@@ -85,6 +92,8 @@ export default class extends Controller {
     for (const el of this.playoffTargets) el.textContent = "—"
     for (const el of this.positionTargets) el.textContent = "—"
     for (const el of this.probTargets) el.textContent = "—"
+    for (const el of this.utilityTargets) el.textContent = "—"
+    for (const el of this.rowSumTargets) el.textContent = "—"
   }
 
   teamIndexFor(id) {
@@ -103,6 +112,24 @@ export default class extends Controller {
       const pos = parseInt(el.dataset.position, 10)
       const count = idx >= 0 ? stats.positions[idx][pos - 1] : 0
       el.textContent = total > 0 ? `${((count / total) * 100).toFixed(1)}%` : "—"
+    }
+    for (const el of this.rowSumTargets) {
+      const idx = this.teamIndexFor(parseInt(el.dataset.team, 10))
+      if (idx >= 0) {
+        const sum = stats.positions[idx].reduce((a, b) => a + b, 0)
+        el.textContent = total > 0 ? `${((sum / total) * 100).toFixed(1)}%` : "—"
+      }
+    }
+    for (const el of this.utilityTargets) {
+      const col = el.dataset.col
+      if (col === "playoff") {
+        const sum = stats.playoff.reduce((a, b) => a + b, 0)
+        el.textContent = total > 0 ? `${((sum / total) * 100).toFixed(1)}%` : "—"
+      } else if (col.startsWith("pos-")) {
+        const pos = parseInt(col.split("-")[1], 10)
+        const sum = stats.positions.reduce((a, row) => a + row[pos - 1], 0)
+        el.textContent = total > 0 ? `${((sum / total) * 100).toFixed(1)}%` : "—"
+      }
     }
     for (let i = 0; i < this.sliderTargets.length; i++) {
       const el = this.probTargets.find((el) => parseInt(el.dataset.index, 10) === i)
@@ -144,16 +171,20 @@ export default class extends Controller {
         if (winProb > 0) {
           scores[human].points += 3
           scores[human].wins += 1
-          scores[human].tdDiff += this.AI_TD_MARGIN
+          scores[human].tdsMade += this.AI_TD_MARGIN
           dfs(i + 1, prob * winProb)
           scores[human].points -= 3
           scores[human].wins -= 1
-          scores[human].tdDiff -= this.AI_TD_MARGIN
+          scores[human].tdsMade -= this.AI_TD_MARGIN
         }
         if (pd > 0) {
           scores[human].points += 1
+          scores[human].tdsMade += 1
+          scores[human].tdsSustained += 1
           dfs(i + 1, prob * pd)
           scores[human].points -= 1
+          scores[human].tdsMade -= 1
+          scores[human].tdsSustained -= 1
         }
         if (lossProb > 0) dfs(i + 1, prob * lossProb)
         return
@@ -161,31 +192,39 @@ export default class extends Controller {
       if (ph > 0) {
         scores[fixture.home].points += 3
         scores[fixture.home].wins += 1
-        scores[fixture.home].tdDiff += 1
-        scores[fixture.away].tdDiff -= 1
+        scores[fixture.home].tdsMade += 1
+        scores[fixture.away].tdsSustained += 1
         dfs(i + 1, prob * ph)
         scores[fixture.home].points -= 3
         scores[fixture.home].wins -= 1
-        scores[fixture.home].tdDiff -= 1
-        scores[fixture.away].tdDiff += 1
+        scores[fixture.home].tdsMade -= 1
+        scores[fixture.away].tdsSustained -= 1
       }
       if (pd > 0) {
         scores[fixture.home].points += 1
+        scores[fixture.home].tdsMade += 1
+        scores[fixture.home].tdsSustained += 1
         scores[fixture.away].points += 1
+        scores[fixture.away].tdsMade += 1
+        scores[fixture.away].tdsSustained += 1
         dfs(i + 1, prob * pd)
         scores[fixture.home].points -= 1
+        scores[fixture.home].tdsMade -= 1
+        scores[fixture.home].tdsSustained -= 1
         scores[fixture.away].points -= 1
+        scores[fixture.away].tdsMade -= 1
+        scores[fixture.away].tdsSustained -= 1
       }
       if (pa > 0) {
         scores[fixture.away].points += 3
         scores[fixture.away].wins += 1
-        scores[fixture.away].tdDiff += 1
-        scores[fixture.home].tdDiff -= 1
+        scores[fixture.away].tdsMade += 1
+        scores[fixture.home].tdsSustained += 1
         dfs(i + 1, prob * pa)
         scores[fixture.away].points -= 3
         scores[fixture.away].wins -= 1
-        scores[fixture.away].tdDiff -= 1
-        scores[fixture.home].tdDiff += 1
+        scores[fixture.away].tdsMade -= 1
+        scores[fixture.home].tdsSustained -= 1
       }
     }
 
@@ -207,7 +246,8 @@ export default class extends Controller {
         for (let t = 0; t < size; t++) {
           scores[t].points = base[t].points
           scores[t].wins = base[t].wins
-          scores[t].tdDiff = base[t].tdDiff
+          scores[t].tdsMade = base[t].tdsMade
+          scores[t].tdsSustained = base[t].tdsSustained
         }
         for (let i = 0; i < entries.length; i++) {
           const { fixture, probs, human } = entries[i]
@@ -218,25 +258,31 @@ export default class extends Controller {
             if (r < winProb) {
               scores[human].points += 3
               scores[human].wins += 1
-              scores[human].tdDiff += this.AI_TD_MARGIN
+              scores[human].tdsMade += this.AI_TD_MARGIN
             } else if (r < winProb + pd) {
               scores[human].points += 1
+              scores[human].tdsMade += 1
+              scores[human].tdsSustained += 1
             }
             continue
           }
           if (r < ph) {
             scores[fixture.home].points += 3
             scores[fixture.home].wins += 1
-            scores[fixture.home].tdDiff += 1
-            scores[fixture.away].tdDiff -= 1
+            scores[fixture.home].tdsMade += 1
+            scores[fixture.away].tdsSustained += 1
           } else if (r < ph + pd) {
             scores[fixture.home].points += 1
+            scores[fixture.home].tdsMade += 1
+            scores[fixture.home].tdsSustained += 1
             scores[fixture.away].points += 1
+            scores[fixture.away].tdsMade += 1
+            scores[fixture.away].tdsSustained += 1
           } else {
             scores[fixture.away].points += 3
             scores[fixture.away].wins += 1
-            scores[fixture.away].tdDiff += 1
-            scores[fixture.home].tdDiff -= 1
+            scores[fixture.away].tdsMade += 1
+            scores[fixture.home].tdsSustained += 1
           }
         }
         const ranks = this.positionsOf(scores)

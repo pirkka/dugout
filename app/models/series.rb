@@ -45,7 +45,7 @@ class Series < ApplicationRecord
         touchdowns_made: touchdowns_made, touchdowns_sustained: touchdowns_sustained, casualties_made: casualties_made, casualties_sustained: casualties_sustained }
     end
 
-    standings.sort_by! { |s| [-s[:points], -s[:wins], -(s[:touchdowns_made]-s[:touchdowns_sustained])] }
+    standings.sort_by! { |s| [ -s[:points], -s[:wins], -s[:touchdowns_made], -(s[:touchdowns_made] - s[:touchdowns_sustained]) ] }
 
     standings.each_with_index do |s, i|
       st = series_teams.find_or_initialize_by(team_id: s[:team_id])
