@@ -42,7 +42,7 @@ export default class extends Controller {
   }
 
   initialScores() {
-    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdsMade: t.tdsMade, tdsSustained: t.tdsSustained, name: t.name }))
+    return this.teams.map((t) => ({ points: t.points, wins: t.wins, tdsMade: t.tds_made, tdsSustained: t.tds_sustained, name: t.name }))
   }
 
   probs(index) {
