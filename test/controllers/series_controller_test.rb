@@ -8,7 +8,8 @@ class SeriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Predictor: REBBL Season 15"
     assert_select "h2", text: "Upcoming Matches"
     assert_select "h5", text: "Round 3"
-    assert_select "th", text: "TD"
+    assert_select "th", text: "Playoff"
+    assert_select "th", text: "Σ", count: 0
     assert_select "input[type=range][data-predictor-target=slider]" do |sliders|
       assert sliders.all? { |s| (0..1).cover?(s[:value].to_f) }
     end
