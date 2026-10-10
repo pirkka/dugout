@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+# Push local development SQLite database to the Kamal deploy target.
+#
+#   bin/db-push                  # interactive, stops app, backs up prod, pushes dev -> prod
+#   bin/db-push --yes            # skip confirmation prompt
+#   bin/db-push --no-stop        # copy without stopping the app (risky, not recommended)
+#   bin/db-push --no-backup      # skip production backup (not recommended)
+#   bin/db-push --dry-run        # show what would happen without doing it
+#
+# Env overrides:
+#   SSH_TARGET=root@one KAMAL="bin/kamal -d staging" VOLUME=dugout_storage bin/db-push
+#
+# What it does:
+#   1. Takes a consistent snapshot of storage/development.sqlite3 via `sqlite3 .backup`
+#   2. Backs up the remote production.sqlite3 (in the dugout_storage volume)
+#      to db/backups/production-<timestamp>.sqlite3 locally
+#   3. Stops the app (bin/kamal app stop), replaces production.sqlite3 in the
+#      volume via a throwaway alpine container, removes stale -wal/-shm files
+#   4. Verifies integrity remotely, restarts the app (bin/kamal app start)
+#
+# Only the primary DB (production.sqlite3) is replaced. The cache/queue/cable
+# DBs are environment-specific and are left untouched.
+
+set -euo pipefail
+
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$APP_DIR"
+
+LOCAL_DB="storage/development.sqlite3"
+REMOTE_DB="production.sqlite3"
+VOLUME="${VOLUME:-dugout_storage}"
+SSH_TARGET="${SSH_TARGET:-root@one}"
+KAMAL="${KAMAL:-bin/kamal}"
+BACKUP_DIR="db/backups"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+
+YES=0
+NO_STOP=0
+NO_BACKUP=0
+DRY_RUN=0
+
+usage() {
+  cat <<'EOF'
+Usage: bin/db-push [--yes] [--no-stop] [--no-backup] [--dry-run]
+
+  bin/db-push                  # interactive, stops app, backs up prod, pushes dev -> prod
+  bin/db-push --yes            # skip confirmation prompt
+  bin/db-push --no-stop        # copy without stopping the app (risky, not recommended)
+  bin/db-push --no-backup      # skip production backup (not recommended)
+  bin/db-push --dry-run        # show what would happen without doing it
+
+Env overrides:
+  SSH_TARGET=root@one KAMAL="bin/kamal -d staging" VOLUME=dugout_storage bin/db-push
+
+Only the primary DB (production.sqlite3) is replaced. The cache/queue/cable
+DBs are environment-specific and are left untouched.
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -y|--yes) YES=1 ;;
+    --no-stop) NO_STOP=1 ;;
+    --no-backup) NO_BACKUP=1 ;;
+    --dry-run) DRY_RUN=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $arg" >&2; usage >&2; exit 1 ;;
+  esac
+done
+
+log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m!!!\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
+
+run() {
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run] %s\n' "$*"
+  else
+    eval "$@"
+  fi
+}
+
+remote() {
+  # run a command on the deploy host
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run ssh %s] %s\n' "$SSH_TARGET" "$*"
+  else
+    ssh -o BatchMode=no "$SSH_TARGET" "$@"
+  fi
+}
+
+[[ -f "$LOCAL_DB" ]] || die "Local database not found: $LOCAL_DB"
+command -v sqlite3 >/dev/null || die "sqlite3 CLI not found (brew install sqlite3)"
+command -v ssh >/dev/null || die "ssh not found"
+# $KAMAL may include extra flags (e.g. "bin/kamal -d staging"), so check the binary only.
+[[ -x "${KAMAL%% *}" ]] || die "kamal not found: $KAMAL"
+
+LOCAL_SIZE="$(du -h "$LOCAL_DB" | cut -f1)"
+log "Local DB:      $LOCAL_DB ($LOCAL_SIZE)"
+log "Remote target: $SSH_TARGET volume=$VOLUME file=$REMOTE_DB"
+log "Kamal:         $KAMAL"
+
+# Show current remote state (fails soft so --dry-run still works offline)
+if [[ "$DRY_RUN" == "1" ]]; then
+  log "Remote DB size: (skipped in dry-run)"
+else
+  log "Checking remote DB..."
+  remote "docker run --rm -v $VOLUME:/target alpine ls -lh /target/$REMOTE_DB /target/${REMOTE_DB}-wal 2>/dev/null || true"
+fi
+
+if [[ "$NO_BACKUP" == "1" ]]; then
+  warn "Skipping production backup (--no-backup). There will be no rollback copy!"
+fi
+if [[ "$NO_STOP" == "1" ]]; then
+  warn "Copying WITHOUT stopping the app (--no-stop). SQLite file may end up corrupted if the app writes mid-copy."
+fi
+
+if [[ "$YES" != "1" && "$DRY_RUN" != "1" ]]; then
+  echo
+  warn "This will OVERWRITE production.sqlite3 on the deploy target with your LOCAL development DB."
+  warn "Production data WILL BE LOST unless you restore from the backup."
+  printf 'Type "push" to continue: '
+  read -r answer
+  [[ "$answer" == "push" ]] || die "Aborted."
+fi
+
+SNAPSHOT_DIR="$(mktemp -d /tmp/dugout-dev-snapshot.XXXXXX)"
+SNAPSHOT="$SNAPSHOT_DIR/snapshot.sqlite3"
+cleanup() { rm -rf "$SNAPSHOT_DIR"; }
+trap cleanup EXIT
+
+STOPPED_BY_US=0
+restart_app() {
+  if [[ "$STOPPED_BY_US" == "1" && "$DRY_RUN" != "1" ]]; then
+    log "Restarting app (cleanup trap)..."
+    $KAMAL app start || warn "App restart failed — run '$KAMAL app start' manually."
+    STOPPED_BY_US=0
+  fi
+}
+# Only auto-restart on error; on success we restart explicitly and clear the flag.
+trap 'restart_app; cleanup' ERR INT TERM
+
+log "Snapshotting local DB (sqlite3 .backup for consistency)..."
+run "sqlite3 \"$LOCAL_DB\" \".backup '$SNAPSHOT'\""
+run "rm -f \"$SNAPSHOT-wal\" \"$SNAPSHOT-shm\""
+run "sqlite3 \"$SNAPSHOT\" \"PRAGMA integrity_check;\" | grep -q '^ok$'"
+
+if [[ "$NO_BACKUP" != "1" ]]; then
+  mkdir -p "$BACKUP_DIR"
+  BACKUP_FILE="$BACKUP_DIR/production-$TIMESTAMP.sqlite3"
+  log "Backing up remote $REMOTE_DB -> $BACKUP_FILE ..."
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run] ssh %s docker run ... cat /target/%s > %s\n' "$SSH_TARGET" "$REMOTE_DB" "$BACKUP_FILE"
+  else
+    # Stream the volume file to stdout via a helper container (volume isn't directly scp-able).
+    # Do it BEFORE stopping the app too? We stop first for consistency — see below.
+    :
+  fi
+else
+  BACKUP_FILE=""
+fi
+
+if [[ "$NO_STOP" != "1" ]]; then
+  log "Stopping app ($KAMAL app stop)..."
+  run "$KAMAL app stop"
+  STOPPED_BY_US=1
+fi
+
+# Backup after stop so the file is quiesced (no WAL writes in flight).
+if [[ "$NO_BACKUP" != "1" ]]; then
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run] ssh %s docker run ... cat /target/%s > %s\n' "$SSH_TARGET" "$REMOTE_DB" "$BACKUP_FILE"
+  else
+    log "Downloading production backup..."
+    ssh "$SSH_TARGET" "docker run --rm -v $VOLUME:/target alpine cat /target/$REMOTE_DB" > "$BACKUP_FILE"
+    ls -lh "$BACKUP_FILE"
+    sqlite3 "$BACKUP_FILE" "PRAGMA integrity_check;" | grep -q '^ok$' \
+      && log "Backup integrity_check: ok" \
+      || warn "Backup integrity_check FAILED — continuing anyway (see $BACKUP_FILE)."
+    # Keep a copy on the server too for fast rollback without re-upload.
+    remote "docker run --rm -v $VOLUME:/target alpine cp /target/$REMOTE_DB /target/${REMOTE_DB}.bak-$TIMESTAMP && ls -lh /target/${REMOTE_DB}.bak-$TIMESTAMP"
+  fi
+fi
+
+TMP_REMOTE="/tmp/dugout-push-$TIMESTAMP.sqlite3"
+log "Uploading snapshot to $SSH_TARGET:$TMP_REMOTE ..."
+if [[ "$DRY_RUN" == "1" ]]; then
+  printf '[dry-run] scp %s %s:%s\n' "$SNAPSHOT" "$SSH_TARGET" "$TMP_REMOTE"
+  printf '[dry-run ssh %s] docker run --rm -v %s:/target -v /tmp:/source alpine sh -c "cp /source/$(basename "$TMP_REMOTE") /target/%s && rm -f /target/%s-wal /target/%s-shm"\n' "$SSH_TARGET" "$VOLUME" "$REMOTE_DB" "$REMOTE_DB" "$REMOTE_DB"
+else
+  scp "$SNAPSHOT" "$SSH_TARGET:$TMP_REMOTE"
+  remote "docker run --rm -v $VOLUME:/target -v /tmp:/source alpine sh -c \"cp '/source/$(basename "$TMP_REMOTE")' '/target/$REMOTE_DB' && rm -f '/target/${REMOTE_DB}-wal' '/target/${REMOTE_DB}-shm' && ls -lh '/target/$REMOTE_DB'\""
+  log "Verifying remote integrity..."
+  remote "docker run --rm -v $VOLUME:/target alpine sh -c \"apk add -q sqlite 2>/dev/null; sqlite3 '/target/$REMOTE_DB' 'PRAGMA integrity_check;'\"" | grep -q '^ok$' \
+    && log "Remote integrity_check: ok" \
+    || die "Remote integrity_check FAILED. App is still stopped — investigate before starting. Server-side upload is at $TMP_REMOTE."
+  remote "rm -f '$TMP_REMOTE'"
+fi
+
+if [[ "$NO_STOP" != "1" ]]; then
+  log "Starting app ($KAMAL app start)..."
+  run "$KAMAL app start"
+  STOPPED_BY_US=0
+  trap cleanup EXIT INT TERM
+else
+  warn "App was left running. If you see 'database is locked' or odd reads, restart with: $KAMAL app restart || $KAMAL redeploy"
+fi
+
+echo
+log "Done. Local $LOCAL_DB is now live as $REMOTE_DB on $SSH_TARGET."
+if [[ -n "${BACKUP_FILE:-}" && "$DRY_RUN" != "1" ]]; then
+  log "Rollback: scp $BACKUP_FILE $SSH_TARGET:/tmp/rollback.sqlite3 && ssh $SSH_TARGET 'docker run --rm -v $VOLUME:/target -v /tmp:/source alpine sh -c \"cp /source/rollback.sqlite3 /target/$REMOTE_DB && rm -f /target/$REMOTE_DB-wal /target/$REMOTE_DB-shm\"' && $KAMAL app start"
+fi

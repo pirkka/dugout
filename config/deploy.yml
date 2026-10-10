@@ -7,7 +7,7 @@ image: pirkka/dugout
 # Deploy to these servers.
 servers:
   web:
-    - 89.167.108.217
+    - one
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -92,9 +92,9 @@ builder:
   #   - GITHUB_TOKEN
   #   - RAILS_MASTER_KEY
 
-# Use a different ssh user than root
-# ssh:
-#   user: app
+# SSH as root@one (taeggie-helsinki-one, locally resolves to 89.167.108.217)
+ssh:
+  user: root
 
 # Use accessory services (secrets come from .kamal/secrets).
 # accessories:
