@@ -132,8 +132,10 @@ trap cleanup EXIT
 STOPPED_BY_US=0
 restart_app() {
   if [[ "$STOPPED_BY_US" == "1" && "$DRY_RUN" != "1" ]]; then
-    log "Restarting app (cleanup trap)..."
-    $KAMAL app start || warn "App restart failed — run '$KAMAL app start' manually."
+    log "Rebooting app (cleanup trap)..."
+    # NOTE: `app boot`, not `app start` — only boot re-registers the
+    # container with kamal-proxy. A bare start leaves the site 404ing.
+    $KAMAL app boot || warn "App reboot failed — run '$KAMAL app boot' manually."
     STOPPED_BY_US=0
   fi
 }
@@ -178,7 +180,9 @@ if [[ "$NO_BACKUP" != "1" ]]; then
       && log "Backup integrity_check: ok" \
       || warn "Backup integrity_check FAILED — continuing anyway (see $BACKUP_FILE)."
     # Keep a copy on the server too for fast rollback without re-upload.
-    remote "docker run --rm -v $VOLUME:/target alpine cp /target/$REMOTE_DB /target/${REMOTE_DB}.bak-$TIMESTAMP && ls -lh /target/${REMOTE_DB}.bak-$TIMESTAMP"
+    # NOTE: both commands must run inside the helper container via sh -c;
+    # a bare `&&` would run `ls` on the host, where /target doesn't exist.
+    remote "docker run --rm -v $VOLUME:/target alpine sh -c 'cp /target/$REMOTE_DB /target/${REMOTE_DB}.bak-$TIMESTAMP && ls -lh /target/${REMOTE_DB}.bak-$TIMESTAMP'"
   fi
 fi
 
@@ -198,8 +202,8 @@ else
 fi
 
 if [[ "$NO_STOP" != "1" ]]; then
-  log "Starting app ($KAMAL app start)..."
-  run "$KAMAL app start"
+  log "Booting app ($KAMAL app boot)..."
+  run "$KAMAL app boot"
   STOPPED_BY_US=0
   trap cleanup EXIT INT TERM
 else
@@ -209,5 +213,5 @@ fi
 echo
 log "Done. Local $LOCAL_DB is now live as $REMOTE_DB on $SSH_TARGET."
 if [[ -n "${BACKUP_FILE:-}" && "$DRY_RUN" != "1" ]]; then
-  log "Rollback: scp $BACKUP_FILE $SSH_TARGET:/tmp/rollback.sqlite3 && ssh $SSH_TARGET 'docker run --rm -v $VOLUME:/target -v /tmp:/source alpine sh -c \"cp /source/rollback.sqlite3 /target/$REMOTE_DB && rm -f /target/$REMOTE_DB-wal /target/$REMOTE_DB-shm\"' && $KAMAL app start"
+  log "Rollback: scp $BACKUP_FILE $SSH_TARGET:/tmp/rollback.sqlite3 && ssh $SSH_TARGET 'docker run --rm -v $VOLUME:/target -v /tmp:/source alpine sh -c \"cp /source/rollback.sqlite3 /target/$REMOTE_DB && rm -f /target/$REMOTE_DB-wal /target/$REMOTE_DB-shm\"' && $KAMAL app boot"
 fi

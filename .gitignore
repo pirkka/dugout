@@ -27,6 +27,9 @@ config/credentials/*.key
 # Ignore Kamal secrets
 .kamal/secrets
 
+# Ignore local production database backups (see bin/db-push)
+db/backups/*
+
 # Ignem/editor files:
 .byebug_history
 .bundle
