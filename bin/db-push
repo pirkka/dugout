@@ -29,6 +29,10 @@ cd "$APP_DIR"
 LOCAL_DB="storage/development.sqlite3"
 REMOTE_DB="production.sqlite3"
 VOLUME="${VOLUME:-dugout_storage}"
+# Must match the Dockerfile USER (the app runs as non-root, and the helper
+# container copies files as root — without this chown every push leaves a
+# root-owned, unwritable production.sqlite3 behind).
+APP_UID_GID="${APP_UID_GID:-1000:1000}"
 SSH_TARGET="${SSH_TARGET:-root@one}"
 KAMAL="${KAMAL:-bin/kamal}"
 BACKUP_DIR="db/backups"
@@ -193,7 +197,7 @@ if [[ "$DRY_RUN" == "1" ]]; then
   printf '[dry-run ssh %s] docker run --rm -v %s:/target -v /tmp:/source alpine sh -c "cp /source/$(basename "$TMP_REMOTE") /target/%s && rm -f /target/%s-wal /target/%s-shm"\n' "$SSH_TARGET" "$VOLUME" "$REMOTE_DB" "$REMOTE_DB" "$REMOTE_DB"
 else
   scp "$SNAPSHOT" "$SSH_TARGET:$TMP_REMOTE"
-  remote "docker run --rm -v $VOLUME:/target -v /tmp:/source alpine sh -c \"cp '/source/$(basename "$TMP_REMOTE")' '/target/$REMOTE_DB' && rm -f '/target/${REMOTE_DB}-wal' '/target/${REMOTE_DB}-shm' && ls -lh '/target/$REMOTE_DB'\""
+  remote "docker run --rm -v $VOLUME:/target -v /tmp:/source alpine sh -c \"cp '/source/$(basename "$TMP_REMOTE")' '/target/$REMOTE_DB' && chown $APP_UID_GID '/target/$REMOTE_DB' && rm -f '/target/${REMOTE_DB}-wal' '/target/${REMOTE_DB}-shm' && ls -l '/target/$REMOTE_DB'\""
   log "Verifying remote integrity..."
   remote "docker run --rm -v $VOLUME:/target alpine sh -c \"apk add -q sqlite 2>/dev/null; sqlite3 '/target/$REMOTE_DB' 'PRAGMA integrity_check;'\"" | grep -q '^ok$' \
     && log "Remote integrity_check: ok" \

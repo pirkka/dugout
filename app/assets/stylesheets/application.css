@@ -44,6 +44,10 @@ table.departed tbody tr {
     opacity: 0.6;
 }
 
+table.centered td {
+    text-align: center;
+}
+
 @media (max-width: 600px) {
     th,
     td {

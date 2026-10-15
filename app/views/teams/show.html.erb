@@ -17,6 +17,41 @@
 Coach: <%= link_to @team.coach.name, @team.coach if @team.coach %>
 Race: <%= @team.race %>
 
+<h2>Lifetime Record</h2>
+<% if @team.lifetime_stat && @team.lifetime_stat.matches.to_i > 0 %>
+  <% lifetime = @team.lifetime_stat %>
+  <table class="centered">
+    <thead>
+      <tr>
+        <th>P</th>
+        <th>W</th>
+        <th>D</th>
+        <th>L</th>
+        <th>Pts</th>
+        <th>TD+</th>
+        <th>TD-</th>
+        <th>CAS+</th>
+        <th>CAS-</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><%= lifetime.matches %></td>
+        <td><%= lifetime.wins %></td>
+        <td><%= lifetime.draws %></td>
+        <td><%= lifetime.losses %></td>
+        <td><%= lifetime.points %></td>
+        <td>+<%= lifetime.touchdowns_made %></td>
+        <td>-<%= lifetime.touchdowns_sustained %></td>
+        <td>+<%= lifetime.casualties_made %></td>
+        <td>-<%= lifetime.casualties_sustained %></td>
+      </tr>
+    </tbody>
+  </table>
+<% else %>
+  <p>No lifetime record yet.</p>
+<% end %>
+
 <h2>Roster</h2>
 <% if @current_roster.any? %>
   <table>
@@ -80,6 +115,9 @@ Race: <%= @team.race %>
     <ul>
       <% contests.each do |contest| %>
         <li>
+          <% if contest.live? %>
+            <span class="badge badge-active">Live</span>
+          <% end %>
           <%= "#{contest.match_date.strftime("%B %d, %Y")}:" if contest.match_date %>
           <%= link_to @team.name, @team %>
           vs
@@ -100,10 +138,10 @@ Race: <%= @team.race %>
   <p>No upcoming matches.</p>
 <% end %>
 
-<% if @team.matches.any? %>
-  <% matches_by_comp = @team.matches.includes(:competition).group_by(&:competition) %>
-  <% matches_by_comp.each do |competition, matches| %>
-    <h2><%= link_to competition.name, competition %></h2>
+<h2>Match History</h2>
+<% if @matches_by_competition.any? %>
+  <% @matches_by_competition.each do |competition, matches| %>
+    <h3><%= link_to competition.name, competition %></h3>
     <ul>
       <% matches.sort_by { |m| -(m.started || Time.at(0)).to_f }.each do |match| %>
         <% our_mt = match.match_teams.find { |mt| mt.team_id == @team.id } %>

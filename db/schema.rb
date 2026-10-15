@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_26_133000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_000002) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -65,6 +65,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_133000) do
     t.integer "competition_id", null: false
     t.datetime "created_at", null: false
     t.integer "home_team_id"
+    t.boolean "live", default: false, null: false
     t.datetime "match_date"
     t.string "match_id"
     t.integer "round"
@@ -204,6 +205,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_133000) do
     t.index ["team_id"], name: "index_series_teams_on_team_id"
   end
 
+  create_table "team_lifetime_stats", force: :cascade do |t|
+    t.integer "casualties_made", default: 0, null: false
+    t.integer "casualties_sustained", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "draws", default: 0, null: false
+    t.integer "losses", default: 0, null: false
+    t.integer "matches", default: 0, null: false
+    t.integer "points", default: 0, null: false
+    t.integer "team_id", null: false
+    t.integer "touchdowns_made", default: 0, null: false
+    t.integer "touchdowns_sustained", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "wins", default: 0, null: false
+    t.index ["team_id"], name: "index_team_lifetime_stats_on_team_id", unique: true
+  end
+
   create_table "teams", force: :cascade do |t|
     t.integer "api_coach_id"
     t.json "api_data"
@@ -246,5 +263,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_133000) do
   add_foreign_key "series", "leagues"
   add_foreign_key "series_teams", "series"
   add_foreign_key "series_teams", "teams"
+  add_foreign_key "team_lifetime_stats", "teams"
   add_foreign_key "teams", "coaches"
 end

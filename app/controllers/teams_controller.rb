@@ -10,6 +10,8 @@ class TeamsController < ApplicationController
       @upcoming_contests = @team.upcoming_contests.includes(:competition, :home_team, :away_team)
       @current_roster = @team.current_roster
       @departed_roster = @team.departed_roster
+      @matches_by_competition = @team.matches.includes(:competition).group_by(&:competition)
+        .sort_by { |_, matches| -(matches.filter_map(&:started).max || Time.at(0)).to_f }
     end
   end
 
@@ -26,6 +28,6 @@ class TeamsController < ApplicationController
   private
 
   def set_team
-    @team = Team.includes(:competitions, matches: { match_teams: :team }).find_by(slug: params[:slug])
+    @team = Team.includes(:lifetime_stat, :competitions, matches: { match_teams: :team }).find_by(slug: params[:slug])
   end
 end

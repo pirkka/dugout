@@ -554,4 +554,83 @@ class CompetitionTest < ActiveSupport::TestCase
   ensure
     CyanideApi::Client.define_method(:ladder, original)
   end
+
+  test "refresh_upcoming_matches prefers competition_round and stores live flag" do
+    home = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "id-101")
+    away = Team.create!(name: "Razorback Raiders", slug: "razorback-raiders", api_id: "id-102")
+    api_contests = [
+      { "contest_id" => "cn-live", "match_id" => "mc-live", "competition_round" => 2, "round" => 99,
+        "contest_status" => "InProgress", "live" => 1, "match_date" => nil,
+        "opponents" => [{ "team" => { "id" => "id-101", "score" => 2 } }, { "team" => { "id" => "id-102", "score" => 0 } }] }
+    ]
+    original = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => api_contests } }
+
+    @competition.refresh_upcoming_matches
+    contest = @competition.contests.find_by(api_id: "cn-live")
+    assert_equal 2, contest.round
+    assert contest.live?
+    assert_equal 2, contest.home_score
+    assert_equal 0, contest.away_score
+  ensure
+    CyanideApi::Client.define_method(:contests, original)
+  end
+
+  test "refresh_upcoming_matches skips contests whose game_id already played" do
+    @competition.matches.create!(api_id: "game-1", started: 1.day.ago, finished: 1.day.ago + 2.hours, round: 1)
+    api_contests = [
+      { "contest_id" => "cn-001", "match_id" => "mc-001", "game_id" => "game-1",
+        "competition_round" => 1, "contest_status" => "InProgress", "opponents" => [] }
+    ]
+    original = CyanideApi::Client.instance_method(:contests)
+    CyanideApi::Client.define_method(:contests) { |**| { "contests" => api_contests } }
+
+    @competition.refresh_upcoming_matches
+    assert_empty @competition.contests.where(api_id: "cn-001")
+  ensure
+    CyanideApi::Client.define_method(:contests, original)
+  end
+
+  test "expected_rounds is teams minus one for even round-robin" do
+    # rebell_season_15 fixture is round_robin with 2 teams
+    assert_equal 1, competitions(:rebell_season_15).expected_rounds
+  end
+
+  test "expected_rounds equals team count for odd round-robin" do
+    # @competition from setup is round_robin with no teams yet
+    %w[third fourth fifth].each do |slug|
+      @competition.competition_teams.create!(team: Team.create!(name: slug.capitalize, slug: slug))
+    end
+    assert_equal 3, @competition.expected_rounds
+  end
+
+  test "expected_rounds is nil for non round-robin" do
+    @competition.update!(format: :single_elimination)
+    assert_nil @competition.expected_rounds
+  end
+
+  test "schedule merges matches and contests and appends TBD rounds" do
+    # @competition is round_robin with no teams -> no expected rounds
+    match = @competition.matches.create!(api_id: "m-sched", started: 1.day.ago, finished: 1.day.ago + 2.hours, round: 1)
+    contest = @competition.contests.create!(api_id: "cn-sched", round: 2, status: "Scheduled")
+
+    rows = @competition.schedule
+    assert_equal [1, 2], rows.map(&:first)
+    assert_equal [match.id], rows.first[1][:matches].map(&:id)
+    assert_empty rows.first[1][:contests]
+    assert_empty rows.second[1][:matches]
+    assert_equal [contest.id], rows.second[1][:contests].map(&:id)
+  end
+
+  test "schedule pads future rounds up to expected_rounds" do
+    @competition.matches.create!(api_id: "m-sched", started: 1.day.ago, finished: 1.day.ago + 2.hours, round: 1)
+    10.times { |i| @competition.competition_teams.create!(team: Team.create!(name: "Extra #{i}", slug: "extra-#{i}")) }
+    assert_equal 9, @competition.expected_rounds
+
+    rows = @competition.schedule
+    assert_equal (1..9).to_a, rows.map(&:first)
+    assert_equal 1, rows.first[1][:matches].size
+    assert_empty rows[1][1][:matches]
+    assert_empty rows[1][1][:contests]
+  end
 end

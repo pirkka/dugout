@@ -83,4 +83,48 @@ class TeamTest < ActiveSupport::TestCase
   test "current_roster is empty without player versions" do
     assert_equal [], teams(:razorback_raiders).current_roster
   end
+
+  test "recalculate_lifetime_stats tallies W/D/L, TD and CAS across competitions" do
+    team = Team.create!(name: "Lifetime Home", slug: "lifetime-home")
+    opponent = Team.create!(name: "Lifetime Away", slug: "lifetime-away")
+    comp_a = competitions(:rebell_season_15)
+    comp_b = competitions(:rebell_playoffs)
+
+    match_a = comp_a.matches.create!(api_id: "lt-1", started: 1.day.ago, finished: 1.day.ago + 2.hours, round: 1)
+    match_a.match_teams.create!(team: team, result: :win, score: 2, conceded: 1,
+      api_data: { "inflictedcasualties" => 3, "sustainedcasualties" => 1 })
+    match_a.match_teams.create!(team: opponent, result: :loss, score: 1, conceded: 2)
+
+    match_b = comp_b.matches.create!(api_id: "lt-2", started: 2.days.ago, finished: 2.days.ago + 2.hours, round: 1)
+    match_b.match_teams.create!(team: team, result: :draw, score: 1, conceded: 1,
+      api_data: { "inflictedcasualties" => 1, "sustainedcasualties" => 2 })
+    match_b.match_teams.create!(team: opponent, result: :draw, score: 1, conceded: 1)
+
+    match_c = comp_b.matches.create!(api_id: "lt-3", started: 3.days.ago, finished: 3.days.ago + 2.hours, round: 2)
+    match_c.match_teams.create!(team: team, result: :loss, score: 0, conceded: 2, api_data: {})
+    match_c.match_teams.create!(team: opponent, result: :win, score: 2, conceded: 0)
+
+    stat = team.recalculate_lifetime_stats!
+
+    assert_equal 3, stat.matches
+    assert_equal 1, stat.wins
+    assert_equal 1, stat.draws
+    assert_equal 1, stat.losses
+    assert_equal 4, stat.points
+    assert_equal 3, stat.touchdowns_made
+    assert_equal 4, stat.touchdowns_sustained
+    assert_equal 4, stat.casualties_made
+    assert_equal 3, stat.casualties_sustained
+  end
+
+  test "recalculate_lifetime_stats is idempotent and handles teams with no matches" do
+    team = Team.create!(name: "No Matches FC", slug: "no-matches-fc")
+
+    stat = team.recalculate_lifetime_stats!
+
+    assert_equal 0, stat.matches
+    assert_equal 0, stat.points
+    assert_equal team, stat.team
+    assert_equal stat, team.recalculate_lifetime_stats!.reload
+  end
 end

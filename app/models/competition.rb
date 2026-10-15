@@ -42,7 +42,7 @@ class Competition < ApplicationRecord
     contest_rounds = {}
     if league.game_version.to_sym == :bb3
       client.contests(league_id: league.api_id, competition_id: api_id, game_version: league.game_version).fetch("contests", []).each do |contest|
-        contest_rounds[contest["game_id"].to_s] ||= contest["round"]
+        contest_rounds[contest["game_id"].to_s] ||= contest["competition_round"] || contest["round"]
       end
     end
 
@@ -79,6 +79,7 @@ class Competition < ApplicationRecord
     refresh_standings if league.game_version.to_sym == :bb3
     calculate_standings if league.game_version.to_sym == :bb2
     calculate_team_stats
+    recalculate_lifetime_stats
     true
   rescue CyanideApi::NotFoundError
     errors.add(:base, "Matches not found on API")
@@ -106,7 +107,9 @@ class Competition < ApplicationRecord
     api_contests.each do |c|
       contest_status = c["contest_status"] || c["status"]
       next if contest_status.to_s.downcase.in?(%w[played validated])
-      match_api_id = c["match_uuid"].presence || c["game_id"].presence
+      # game_id is the played-match uuid on BB3 (match_uuid on BB2);
+      # match_id is the contest-level id and never matches matches.api_id.
+      match_api_id = c["game_id"].presence || c["match_uuid"].presence
       next if match_api_id.present? && matches.exists?(api_id: match_api_id.to_s)
       next if api_id.present? && c["competition_id"].to_s != api_id
       upcoming_ids << c["contest_id"].to_s
@@ -114,9 +117,10 @@ class Competition < ApplicationRecord
       opponents = c["opponents"] || []
       contest.update!(
         match_id: c["match_id"]&.to_s,
-        round: c["round"],
+        round: c["competition_round"] || c["round"],
         status: contest_status,
         match_date: c["match_date"],
+        live: c["live"].to_i == 1,
         home_team: team_for_contest(opponents[0]),
         away_team: team_for_contest(opponents[1]),
         api_data: c
@@ -220,6 +224,42 @@ class Competition < ApplicationRecord
       casualties_sustained = mts.sum { |mt| mt.api_data&.dig("sustainedcasualties") || 0 }
       ct.update!(touchdowns_made: touchdowns_made, touchdowns_sustained: touchdowns_sustained, casualties_made: casualties_made, casualties_sustained: casualties_sustained)
     end
+  end
+
+  def recalculate_lifetime_stats
+    competition_teams.select(:team_id).distinct.pluck(:team_id).each do |team_id|
+      Team.find_by(id: team_id)&.recalculate_lifetime_stats!
+    end
+  end
+
+  # Total rounds for a round-robin: every team plays every other team once.
+  # Returns nil for formats where the round count can't be derived (the
+  # Cyanide API only publishes the current round's contests, and future
+  # round pairings are drawn per round, so rounds beyond the known ones
+  # are shown as TBD rather than projected).
+  def expected_rounds
+    return nil unless round_robin?
+    count = competition_teams.count
+    return nil if count < 2
+    count.even? ? count - 1 : count
+  end
+
+  # Whole schedule skeleton: every round from 1 to the highest known or
+  # expected round, with played matches and upcoming/live contests attached.
+  # Rounds with neither are future rounds whose pairings don't exist yet.
+  def schedule
+    by_round = Hash.new { |h, k| h[k] = { matches: [], contests: [] } }
+    matches.each { |m| by_round[m.round][:matches] << m }
+    contests.order(:match_date).each { |c| by_round[c.round][:contests] << c }
+    last = [(by_round.keys.compact.max || 0), (expected_rounds || 0)].max
+    return [] if last < 1
+    rows = (1..last).map do |round|
+      entry = by_round[round]
+      entry[:matches].sort_by! { |m| -(m.started || Time.at(0)).to_f }
+      [round, entry]
+    end
+    rows << [nil, by_round[nil]] if by_round.key?(nil)
+    rows
   end
 
   def calculate_standings

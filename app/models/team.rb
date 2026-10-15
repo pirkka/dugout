@@ -7,6 +7,7 @@ class Team < ApplicationRecord
   has_many :match_teams, dependent: :destroy
   has_many :matches, through: :match_teams
   has_many :players, dependent: :destroy
+  has_one :lifetime_stat, class_name: "TeamLifetimeStat", dependent: :destroy
 
   def upcoming_contests
     Contest.where(competition_id: competitions.select(:id))
@@ -83,6 +84,31 @@ class Team < ApplicationRecord
     api_key = Rails.application.credentials.cyanide_api_key
     game_version = self.competitions.first.league.game_version
     "https://web.cyanide-studio.com/ws/#{game_version}/team/?key=#{api_key}&id=#{api_id}&stats=1"
+  end
+
+  # Rebuilds the cached lifetime tally from all MatchTeam rows. Uses the
+  # same W/D/L + points (3/1/0) convention as Competition#calculate_standings
+  # and the same TD/CAS sums as Competition#calculate_team_stats, across
+  # all competitions. Only surviving MatchTeam rows count (duplicates
+  # destroyed by Competition#remove_duplicate_matches are excluded).
+  def recalculate_lifetime_stats!
+    mts = MatchTeam.where(team_id: id)
+    wins = mts.win.count
+    draws = mts.draw.count
+    losses = mts.loss.count
+    stat = lifetime_stat || build_lifetime_stat
+    stat.update!(
+      matches: wins + draws + losses,
+      wins: wins,
+      draws: draws,
+      losses: losses,
+      points: wins * 3 + draws,
+      touchdowns_made: mts.sum(:score),
+      touchdowns_sustained: mts.sum(:conceded),
+      casualties_made: mts.sum { |mt| mt.api_data&.dig("inflictedcasualties") || 0 },
+      casualties_sustained: mts.sum { |mt| mt.api_data&.dig("sustainedcasualties") || 0 }
+    )
+    stat
   end
 
   private

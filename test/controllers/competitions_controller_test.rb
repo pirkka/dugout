@@ -12,7 +12,7 @@ class CompetitionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h3", text: "Round 2"
   end
 
-  test "renders flat list without round headings when no matches have rounds" do
+  test "renders round TBD heading when no matches have rounds" do
     match = matches(:final_showdown)
     match.match_teams.create!(team: teams(:cackling_furies), score: 1, conceded: 0)
     match.match_teams.create!(team: teams(:razorback_raiders), score: 0, conceded: 1)
@@ -22,17 +22,17 @@ class CompetitionsControllerTest < ActionDispatch::IntegrationTest
 
     get competition_path(competition)
     assert_response :success
-    assert_select "h3", count: 0
+    assert_select "h3", text: "Round TBD"
   end
 
-  test "renders upcoming matches" do
+  test "renders schedule with upcoming matches" do
     match = matches(:final_showdown)
     match.match_teams.create!(team: teams(:cackling_furies), score: 1, conceded: 0)
     match.match_teams.create!(team: teams(:razorback_raiders), score: 0, conceded: 1)
 
     get competition_path(competitions(:rebell_season_15))
     assert_response :success
-    assert_select "h2", text: "Upcoming Matches"
+    assert_select "h2", text: "Schedule"
     assert_select "h3", text: "Round 3"
     assert_select "li", text: /August 20, 2026:/
     assert_select "li", text: /Cackling Furies/
