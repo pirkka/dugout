@@ -1,3 +1,4 @@
+<% if @debug_mode %>
 <div class="debug">
     <strong>Debug links:</strong>
     <%= link_to 'nuffle', "https://nuffle.xyz/leaderboards/#{@competition.api_id}", target: '_blank' %>
@@ -8,6 +9,7 @@
     <%= link_to 'cya-coaches', @competition.cyanide_coaches_uri, target: '_blank' %>
     <%= button_to "Refresh", refresh_competition_path(@competition), method: :post, style: 'display: inline;' %>
 </div>
+<% end %>
 
 <h1><%= @competition.name %>
 
@@ -15,17 +17,16 @@
 <span><%= @competition.platform %></span>
 <span><%= @competition.status %></span>
 <span><%= @competition.league.game_version %></span>
-</h1>
+<%= button_to "♻", refresh_competition_path(@competition), method: :post, class: 'refresh-button' %>
 
 <div class="popup-menu" data-controller="popup-menu">
-  <button class="popup-menu__trigger" data-action="click->popup-menu#toggle">
-    <% if @competition.series %>
-    Switch Series (<%= @competition.series.name %>)
-    <% else %>
-    Add To Series
-    <% end %>
-  </button>
+  <button class="popup-menu__trigger" data-action="click->popup-menu#toggle">⚙</button>
   <div class="popup-menu__dropdown" data-popup-menu-target="menu">
+    <% if @competition.series %>
+      <%= button_to "Switch Series (#{@competition.series.name})", add_competition_to_series_path(@competition, series_id: @competition.series.id), method: :post %>
+    <% else %>
+      <%= button_to "Add To Series", add_competition_to_series_path(@competition, new_series_name: ""), method: :post %>
+    <% end %>
     <% @series_list.each do |series| %>
       <%= button_to series.name, add_competition_to_series_path(@competition, series_id: series.id), method: :post %>
     <% end %>

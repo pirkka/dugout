@@ -36,4 +36,5 @@ Rails.application.routes.draw do
   post 'leagues/:slug/refresh' => 'leagues#refresh', as: :refresh_league
   post 'competitions/:slug/refresh' => 'competitions#refresh', as: :refresh_competition
   post 'competitions/:slug/add_to_series' => 'competitions#add_to_series', as: :add_competition_to_series
+  post 'toggle_debug' => 'application#toggle_debug', as: :toggle_debug
 end
