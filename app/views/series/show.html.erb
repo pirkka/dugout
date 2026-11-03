@@ -1,5 +1,6 @@
 <h1><%= @series.name %></h1>
 
+<% if @debug_mode %>
 <div class="debug">
   <strong>Debug links:</strong>
   <%= link_to "league: #{@series.league.name}", @series.league %>
@@ -7,6 +8,7 @@
   <%= link_to "Edit", edit_series_path(@series.slug) %>
   <%= button_to "Refresh standings", refresh_series_path(@series.slug), method: :post, style: 'display: inline;' %>
 </div>
+<% end %>
 
 <h2>Standings</h2>
 <% if @series.series_teams.any? %>
@@ -30,7 +32,7 @@
       <% @series.series_teams.each do |st| %>
         <tr>
           <td><%= st.position %></td>
-          <td nowrap><%= link_to st.team.name, st.team %> <span><%= st.team.race %></span></td>
+          <td><%= link_to st.team.name, st.team %> <span><%= st.team.race %></span></td>
           <td>
             <%= image_tag st.team.logo_url, alt: 'logo', width: 32, height: 32 %>
           </td>

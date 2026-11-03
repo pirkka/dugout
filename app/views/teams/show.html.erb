@@ -1,9 +1,11 @@
+<% if @debug_mode %>
 <div class="debug">
     <strong>Debug links:</strong>
     <%= link_to 'nuffle', "https://nuffle.xyz/teams/#{@team.api_id}", target: '_blank' %>
     <%= link_to 'cyanide', @team.cyanide_uri, target: '_blank' %>
     <%= button_to "Refresh", refresh_team_path(@team), method: :post, style: 'display: inline;' %>
 </div>
+<% end %>
 <%= image_tag @team.logo_url, alt: "#{@team.name} logo", style: "max-width: 140px; max-height: 140px; float: right; margin-top: 30px;" if @team.logo_url %>
 
 <h1>

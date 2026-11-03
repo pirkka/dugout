@@ -1,11 +1,13 @@
 <h1>Predictor: <%= @series.name %></h1>
 
+<% if @debug_mode %>
 <div class="debug">
   <strong>Debug links:</strong>
   <%= link_to "series", @series %>
   <%= link_to "league: #{@series.league.name}", @series.league %>
   <%= link_to "Edit", edit_series_path(@series.slug) %>
 </div>
+<% end %>
 
 <% team_count = @teams_json.size %>
 <% if team_count.zero? %>
@@ -31,7 +33,7 @@
         <% (1..team_count).each do |pos| %>
           <th>#<%= pos %></th>
         <% end %>
-        <% if @debug %>
+        <% if @debug_mode %>
           <th>Σ</th>
         <% end %>
       </tr>
@@ -44,13 +46,13 @@
           <% (1..team_count).each do |pos| %>
             <td data-predictor-target="position" data-team="<%= st.team_id %>" data-position="<%= pos %>">—</td>
           <% end %>
-          <% if @debug %>
+          <% if @debug_mode %>
           <td class="utility" data-predictor-target="rowSum" data-team="<%= st.team_id %>">—</td>
           <% end %>
         </tr>
       <% end %>
     </tbody>
-    <% if @debug %>
+    <% if @debug_mode %>
       <tfoot>
         <tr class="utility">
           <td>Sum</td>

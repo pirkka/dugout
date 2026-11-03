@@ -60,7 +60,7 @@
       <% @competition.competition_teams.includes(:team).each do |ct| %>
         <tr>
           <td><%= ct.position %></td>
-          <td nowrap>
+          <td>
             <%= link_to ct.team.name, ct.team %> <span><%= ct.team.race %></span></td>
           <td>
             <%= image_tag ct.team.logo_url, alt: ct.team.name, width: 32, height: 32 %>
