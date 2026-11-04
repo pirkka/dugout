@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_095444) do
   create_table "coaches", force: :cascade do |t|
     t.string "api_id"
     t.datetime "created_at", null: false
@@ -154,11 +154,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_000002) do
     t.string "replay_file_name"
     t.json "replay_json"
     t.integer "round"
+    t.string "slug"
     t.datetime "started"
     t.datetime "updated_at", null: false
     t.index ["api_id"], name: "index_matches_on_api_id"
     t.index ["competition_id"], name: "index_matches_on_competition_id"
     t.index ["match_hash"], name: "index_matches_on_match_hash"
+    t.index ["slug"], name: "index_matches_on_slug"
   end
 
   create_table "players", force: :cascade do |t|

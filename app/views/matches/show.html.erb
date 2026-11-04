@@ -27,31 +27,31 @@ vs
   <table style="font-size: 2em;">
     <thead>
       <tr>
-        <th style="font-size: 1em;">Stat</th>
+        <th style="font-size: 0.5em;">Stat</th>
         <% mts.each do |mt| %>
-          <th style="font-size: 1em;"><%= link_to mt.team.name, mt.team %></th>
+          <th style="font-size: 0.5em;"><%= link_to mt.team.name, mt.team %></th>
         <% end %>
       </tr>
     </thead>
     <tbody>
-      <tr><td style="font-size: 1em;">Touchdowns</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedtouchdowns"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Casualties inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedcasualties"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Casualties sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["sustainedcasualties"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Passes</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedpasses"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Catches</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedcatches"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Interceptions</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedinterceptions"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Tackles</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedtackles"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Meters running</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedmetersrunning"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Meters passing</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedmeterspassing"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">KO inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedko"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Injuries inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedinjuries"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Dead inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflicteddead"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">KO sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["sustainedko"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Injuries sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["sustainedinjuries"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Dead sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["sustaineddead"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Pushouts</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["inflictedpushouts"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Expulsions</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["sustainedexpulsions"] %></td><% end %></tr>
-      <tr><td style="font-size: 1em;">Value</td><% mts.each do |mt| %><td style="text-align: center; font-size: 1em;"><%= mt.api_data["value"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Touchdowns</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedtouchdowns"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Casualties inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedcasualties"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Casualties sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["sustainedcasualties"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Passes</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedpasses"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Catches</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedcatches"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Interceptions</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedinterceptions"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Tackles</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedtackles"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Meters running</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedmetersrunning"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Meters passing</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedmeterspassing"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">KO inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedko"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Injuries inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedinjuries"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Dead inflicted</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflicteddead"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">KO sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["sustainedko"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Injuries sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["sustainedinjuries"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Dead sustained</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["sustaineddead"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Pushouts</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["inflictedpushouts"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Expulsions</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["sustainedexpulsions"] %></td><% end %></tr>
+      <tr><td style="font-size: 0.6em;">Value</td><% mts.each do |mt| %><td style="text-align: center; font-size: 0.6em;"><%= mt.api_data["value"] %></td><% end %></tr>
     </tbody>
   </table>
 <% else %>
