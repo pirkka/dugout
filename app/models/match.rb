@@ -36,7 +36,7 @@ class Match < ApplicationRecord
     home = home_team
     date = finished || started || created_at
     return if away.nil? || home.nil? || date.nil?
-    self.slug = "#{away.slug}-vs-#{home.slug}-#{date.strftime('%Y-%m-%d')}"
+    self.slug = "#{away.slug}-vs-#{home.slug}-#{date.strftime('%Y-%m-%d-%H%M%S')}"
   end
 
   def away_team_changed_or_missing?

@@ -7,6 +7,15 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=file][name='replay_jsons[]'][multiple]"
   end
 
+  test "shows match by slug" do
+    match = matches(:season_opener)
+    match.save!
+
+    get match_path(match)
+
+    assert_response :success
+  end
+
   test "upload_replay_batch redirects with summary notice" do
     match = matches(:season_opener)
     file = Rack::Test::UploadedFile.new("test/fixtures/replay.json", "application/json")

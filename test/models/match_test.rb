@@ -54,6 +54,32 @@ class MatchTest < ActiveSupport::TestCase
     assert_equal 1, match.round
   end
 
+  test "generates slug with full finish timestamp" do
+    match = matches(:season_opener)
+    match.save!
+
+    assert_equal "razorback-raiders-vs-cackling-furies-2026-06-01-203000", match.slug
+    assert_equal match.slug, match.to_param
+  end
+
+  test "generates distinct slugs for same teams on the same day" do
+    first = matches(:season_opener)
+    first.save!
+
+    second = first.competition.matches.create!(
+      api_id: "m003",
+      started: first.started,
+      finished: first.finished + 2.hours,
+      round: 1
+    )
+    second.match_teams.create!(team: teams(:cackling_furies), home: true, score: 1, conceded: 0)
+    second.match_teams.create!(team: teams(:razorback_raiders), home: false, score: 0, conceded: 1)
+    second.save!
+
+    assert_not_equal first.slug, second.slug
+    assert_equal "razorback-raiders-vs-cackling-furies-2026-06-01-223000", second.slug
+  end
+
   test "upload_replay_json stores parsed json" do
     match = matches(:season_opener)
     file = Rack::Test::UploadedFile.new("test/fixtures/replay.json", "application/json")

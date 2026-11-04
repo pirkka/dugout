@@ -1,6 +1,22 @@
 require "test_helper"
 
 class CompetitionsControllerTest < ActionDispatch::IntegrationTest
+  test "centers numeric standings cells and shows team value" do
+    teams(:cackling_furies).update!(value: 1234)
+    teams(:razorback_raiders).update!(value: 2345)
+    match = matches(:final_showdown)
+    match.match_teams.create!(team: teams(:cackling_furies), score: 1, conceded: 0)
+    match.match_teams.create!(team: teams(:razorback_raiders), score: 0, conceded: 1)
+
+    get competition_path(competitions(:rebell_season_15))
+
+    assert_response :success
+    assert_select "thead th", text: "Team Value"
+    assert_select "tbody td", text: "1234"
+    assert_select "tbody td", text: "2345"
+    assert_select "tbody tr td[style*='text-align: center']", count: 22
+  end
+
   test "groups matches by round with headings" do
     match = matches(:final_showdown)
     match.match_teams.create!(team: teams(:cackling_furies), score: 1, conceded: 0)

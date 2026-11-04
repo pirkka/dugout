@@ -53,27 +53,29 @@
         <th>L</th>
         <th colspan="2" nowrap>TD</th>
         <th colspan="2" nowrap>Cas</th>
+        <th>Team Value</th>
       </tr>
     </thead>
     <tbody>
       <% playoff_cutoff = @competition.settings&.dig("playoff_cutoff")&.to_i %>
       <% @competition.competition_teams.includes(:team).each do |ct| %>
         <tr>
-          <td><%= ct.position %></td>
+          <td style="text-align: center;"><%= ct.position %></td>
           <td>
             <%= link_to ct.team.name, ct.team %> <span><%= ct.team.race %></span></td>
           <td>
             <%= image_tag ct.team.logo_url, alt: ct.team.name, width: 32, height: 32 %>
           </td>
-          <td><%= @competition.format == :ladder ? ct.score : ct.points %></td>
-          <td><%= ct.matches %></td>
-          <td><%= ct.wins %></td>
-          <td><%= ct.draws %></td>
-          <td><%= ct.losses %></td>
-          <td>+<%= ct.touchdowns_made %></td>
-          <td>-<%= ct.touchdowns_sustained %></td>
-          <td>+<%= ct.casualties_made %></td>
-          <td>-<%= ct.casualties_sustained %></td>
+          <td style="text-align: center;"><%= @competition.format == :ladder ? ct.score : ct.points %></td>
+          <td style="text-align: center;"><%= ct.matches %></td>
+          <td style="text-align: center;"><%= ct.wins %></td>
+          <td style="text-align: center;"><%= ct.draws %></td>
+          <td style="text-align: center;"><%= ct.losses %></td>
+          <td style="text-align: center;">+<%= ct.touchdowns_made %></td>
+          <td style="text-align: center;">-<%= ct.touchdowns_sustained %></td>
+          <td style="text-align: center;">+<%= ct.casualties_made %></td>
+          <td style="text-align: center;">-<%= ct.casualties_sustained %></td>
+          <td style="text-align: center;"><%= ct.team.value %></td>
         </tr>
         <% if playoff_cutoff && ct.position == playoff_cutoff %>
         <tr class="cutoff-row">
