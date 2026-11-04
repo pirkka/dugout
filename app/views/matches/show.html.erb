@@ -1,15 +1,17 @@
+
 <h1>
 <%= link_to @match.away_team&.name || 'n/a', @match.away_team %>
-<span style="color: #888;">vs</span>
+vs
 <%= link_to @match.home_team&.name, @match.home_team %>
-<span style="margin-left: 12px;"><%= @match.match_teams.find_by(home: false)&.score || 'n/a' %> - <%= @match.match_teams.find_by(home: true)&.score %></span>
 </h1>
 
-
+<p>
 <% if @match.finished %>
-  <p><strong>Finished:</strong> <%= @match.finished.in_time_zone("Helsinki").strftime("%d.%m.%Y %H:%M") %></p>
+  <strong>Finished:</strong> <%= @match.finished.in_time_zone("Helsinki").strftime("%d.%m.%Y %H:%M") %>
+  <br>
 <% end %>
-<p><strong>Match hash:</strong><br> <%= @match.calculate_match_hash %></p>
+<strong>Match hash:</strong> <%= @match.calculate_match_hash %>
+</p>
 
 
 <% if @debug_mode %>
@@ -17,35 +19,6 @@
     <b>Debug links:</b>
     <%= link_to "cyanide match", @match.cyanide_match_uri, target: '_blank' %>
 </p>
-<% end %>
-
-<h2>Highlights</h2>
-<% if @match.replay_json.present? %>
-    <% @match.key_highlights.each do |h| %>
-      <p>
-          turn <%= h.turn %>
-            <%= h.event.tr('_','') %>
-            <%= h.match_player&.name %>
-      </p>
-    <% end %>
-<% end %>
-
-<h2>Replay</h2>
-<% if @match.replay? %>
-  <p>Replay file: <%= @match.replay_file_name %></p>
-  <%= button_to "Parse Replay", parse_replay_match_path(@match), method: :post, style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px; margin-bottom: 8px;" %>
-<% end %>
-<% if @match.replay_json.present? %>
-  <p><%= link_to "View Replay Data", match_replay_path(@match) %></p>
-<% end %>
-<%= form_tag upload_replay_match_path(@match), multipart: true, style: "font-size: 18px;" do %>
-  <%= file_field_tag :replay, accept: ".bbr", style: "font-family: Verdana; font-size: 14px;" %>
-  <%= submit_tag "Upload", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
-<% end %>
-
-<%= form_tag upload_replay_json_match_path(@match), multipart: true, style: "font-size: 18px; margin-top: 8px;" do %>
-  <%= file_field_tag :replay_json, accept: ".json", style: "font-family: Verdana; font-size: 14px;" %>
-  <%= button_tag "Upload JSON", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
 <% end %>
 
 <h2>Team Stats</h2>
@@ -61,24 +34,24 @@
       </tr>
     </thead>
     <tbody>
-      <tr><td>Touchdowns</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedtouchdowns"] %></td><% end %></tr>
-      <tr><td>Casualties inflicted</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedcasualties"] %></td><% end %></tr>
-      <tr><td>Casualties sustained</td><% mts.each do |mt| %><td><%= mt.api_data["sustainedcasualties"] %></td><% end %></tr>
-      <tr><td>Passes</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedpasses"] %></td><% end %></tr>
-      <tr><td>Catches</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedcatches"] %></td><% end %></tr>
-      <tr><td>Interceptions</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedinterceptions"] %></td><% end %></tr>
-      <tr><td>Tackles</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedtackles"] %></td><% end %></tr>
-      <tr><td>Meters running</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedmetersrunning"] %></td><% end %></tr>
-      <tr><td>Meters passing</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedmeterspassing"] %></td><% end %></tr>
-      <tr><td>KO inflicted</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedko"] %></td><% end %></tr>
-      <tr><td>Injuries inflicted</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedinjuries"] %></td><% end %></tr>
-      <tr><td>Dead inflicted</td><% mts.each do |mt| %><td><%= mt.api_data["inflicteddead"] %></td><% end %></tr>
-      <tr><td>KO sustained</td><% mts.each do |mt| %><td><%= mt.api_data["sustainedko"] %></td><% end %></tr>
-      <tr><td>Injuries sustained</td><% mts.each do |mt| %><td><%= mt.api_data["sustainedinjuries"] %></td><% end %></tr>
-      <tr><td>Dead sustained</td><% mts.each do |mt| %><td><%= mt.api_data["sustaineddead"] %></td><% end %></tr>
-      <tr><td>Pushouts</td><% mts.each do |mt| %><td><%= mt.api_data["inflictedpushouts"] %></td><% end %></tr>
-      <tr><td>Expulsions</td><% mts.each do |mt| %><td><%= mt.api_data["sustainedexpulsions"] %></td><% end %></tr>
-      <tr><td>Value</td><% mts.each do |mt| %><td><%= mt.api_data["value"] %></td><% end %></tr>
+      <tr><td>Touchdowns</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedtouchdowns"] %></td><% end %></tr>
+      <tr><td>Casualties inflicted</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedcasualties"] %></td><% end %></tr>
+      <tr><td>Casualties sustained</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["sustainedcasualties"] %></td><% end %></tr>
+      <tr><td>Passes</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedpasses"] %></td><% end %></tr>
+      <tr><td>Catches</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedcatches"] %></td><% end %></tr>
+      <tr><td>Interceptions</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedinterceptions"] %></td><% end %></tr>
+      <tr><td>Tackles</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedtackles"] %></td><% end %></tr>
+      <tr><td>Meters running</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedmetersrunning"] %></td><% end %></tr>
+      <tr><td>Meters passing</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedmeterspassing"] %></td><% end %></tr>
+      <tr><td>KO inflicted</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedko"] %></td><% end %></tr>
+      <tr><td>Injuries inflicted</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedinjuries"] %></td><% end %></tr>
+      <tr><td>Dead inflicted</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflicteddead"] %></td><% end %></tr>
+      <tr><td>KO sustained</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["sustainedko"] %></td><% end %></tr>
+      <tr><td>Injuries sustained</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["sustainedinjuries"] %></td><% end %></tr>
+      <tr><td>Dead sustained</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["sustaineddead"] %></td><% end %></tr>
+      <tr><td>Pushouts</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["inflictedpushouts"] %></td><% end %></tr>
+      <tr><td>Expulsions</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["sustainedexpulsions"] %></td><% end %></tr>
+      <tr><td>Value</td><% mts.each do |mt| %><td style="text-align: center;"><%= mt.api_data["value"] %></td><% end %></tr>
     </tbody>
   </table>
 <% else %>
@@ -107,4 +80,34 @@
       </table>
     <% end %>
   <% end %>
+<% end %>
+
+<h2>Highlights</h2>
+<% if @match.replay_json.present? %>
+    <% @match.key_highlights.each do |h| %>
+      <p>
+          turn <%= h.turn %>
+            <%= h.event.tr('_','') %>
+            <%= h.match_player&.name %>
+      </p>
+    <% end %>
+<% end %>
+
+
+<h2>Replay Data</h2>
+<% if @match.replay? %>
+  <p>Replay file: <%= @match.replay_file_name %></p>
+  <%= button_to "Parse Replay", parse_replay_match_path(@match), method: :post, style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px; margin-bottom: 8px;" %>
+<% end %>
+<% if @match.replay_json.present? %>
+  <p><%= link_to "View Replay Data", match_replay_path(@match) %></p>
+<% end %>
+<%= form_tag upload_replay_match_path(@match), multipart: true, style: "font-size: 18px;" do %>
+  <%= file_field_tag :replay, accept: ".bbr", style: "font-family: Verdana; font-size: 14px;" %>
+  <%= submit_tag "Upload", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
+<% end %>
+
+<%= form_tag upload_replay_json_match_path(@match), multipart: true, style: "font-size: 18px; margin-top: 8px;" do %>
+  <%= file_field_tag :replay_json, accept: ".json", style: "font-family: Verdana; font-size: 14px;" %>
+  <%= button_tag "Upload JSON", style: "font-family: Verdana; font-size: 14px; padding: 4px 8px; cursor: pointer; background: #602900; color: white; border: none; border-radius: 4px;" %>
 <% end %>
