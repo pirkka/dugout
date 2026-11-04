@@ -129,6 +129,7 @@
       <% matches_by_round[round].each do |match| %>
         <% mts = match.match_teams.sort_by(&:id) %>
         <li>
+          <%= link_to match.started&.strftime("%B %d, %Y") || "TBD", match %>:
           <%= link_to mts[0].team.name, mts[0].team %>
           vs
           <% if mts[1] %>

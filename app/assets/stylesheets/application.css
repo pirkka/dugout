@@ -40,6 +40,10 @@ td {
     text-align: left;
 }
 
+tbody tr:nth-child(even) {
+    background-color: rgba(128, 128, 128, 0.08);
+}
+
 table.departed tbody tr {
     opacity: 0.6;
 }
