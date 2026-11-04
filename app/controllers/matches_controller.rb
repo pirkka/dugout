@@ -13,10 +13,10 @@ class MatchesController < ApplicationController
     if @match.nil?
       render file: "#{Rails.root}/public/404.html", status: :not_found
     end
-    @competition = @match.competition
-    @league = @competition.league
-    @series = @competition.series
-    @round = @match.round
+    @competition = @match&.competition
+    @league = @competition&.league
+    @series = @competition&.series
+    @round = @match&.round
   end
 
   def replay
@@ -58,7 +58,7 @@ class MatchesController < ApplicationController
   private
 
   def set_match
-    @match = Match.includes(:competition, match_teams: :team).find_by(id: params[:id])
+    @match = Match.includes(:competition, match_teams: :team).find_by(slug: params[:id]) || Match.includes(:competition, match_teams: :team).find_by(id: params[:id])
     @league = @match&.competition&.league
   end
 end

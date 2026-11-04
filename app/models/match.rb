@@ -17,12 +17,38 @@ class Match < ApplicationRecord
   has_many :match_players, dependent: :destroy
   has_many :highlights, dependent: :destroy
 
+  before_save :generate_slug, if: -> { slug.blank? || (changed? && (away_team_changed_or_missing? || home_team_changed_or_missing? || date_changed?)) }
+
   def home_team
     match_teams.find_by(home: true)&.team
   end
 
   def away_team
     match_teams.find_by(home: false)&.team
+  end
+
+  def to_param
+    slug.presence || id.to_s
+  end
+
+  def generate_slug
+    away = away_team
+    home = home_team
+    date = finished || started || created_at
+    return if away.nil? || home.nil? || date.nil?
+    self.slug = "#{away.slug}-vs-#{home.slug}-#{date.strftime('%Y-%m-%d')}"
+  end
+
+  def away_team_changed_or_missing?
+    true
+  end
+
+  def home_team_changed_or_missing?
+    true
+  end
+
+  def date_changed?
+    finished_changed? || started_changed?
   end
 
   def self.upload_replay_jsons(files)
