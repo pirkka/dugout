@@ -148,21 +148,22 @@ class Competition < ApplicationRecord
         new_team.name = t["team"]
         new_team.slug = t["team"].parameterize
       end
-      team.update!(
+      attributes = {
         name: t["team"],
         slug: t["team"].parameterize,
         logo: t["logo"],
         race: t["race"],
         slogan: t["description"],
-        value: t["value"],
-        cash: t["cash"],
         rerolls: t["rerolls"],
         apothecary: t["apothecary"],
         assistant_coaches: t["assistant_coaches"] || t["coach_assistants"],
         cheerleaders: t["cheerleaders"],
-        popularity: t["popularity"],
         api_data: t
-      )
+      }
+      attributes[:value] = t["value"] if t.key?("value")
+      attributes[:cash] = t["cash"] if t.key?("cash")
+      attributes[:popularity] = t["popularity"] || t["dedicated_fans"] if t.key?("popularity") || t.key?("dedicated_fans")
+      team.update!(attributes)
       competition_teams.find_or_create_by!(team: team)
     end
 
@@ -204,6 +205,8 @@ class Competition < ApplicationRecord
       matches_played = wins + draws + losses
       points = wins * 3 + draws
       score = entry["score"]
+      tv = team_data["tv"]
+      team.update_column(:value, tv) if tv.present? && team.value != tv
       ct.update!(matches: matches_played, wins: wins, draws: draws, losses: losses, points: points, score: score, position: team_data["rank"], api_data: entry)
     end
     true

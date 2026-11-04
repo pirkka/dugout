@@ -99,16 +99,23 @@
     <h4><%= round ? "Round #{round}" : "Round TBD" %></h4>
     <ul>
         <% contests_by_round[round].each do |contest| %>
+        <% home_team = contest.home_team %>
+        <% away_team = contest.away_team %>
+        <% home_value = home_team&.value %>
+        <% away_value = away_team&.value %>
         <li>
             <%= "#{contest.match_date.strftime("%B %d, %Y")}:" if contest.match_date %>
-            <% if contest.home_team %>
-            <%= link_to contest.home_team.name, contest.home_team %>
+            <% if home_team %>
+            <%= link_to home_team.name, home_team %>
             <% else %>
             N/A
             <% end %>
             vs
-            <% if contest.away_team %>
-            <%= link_to contest.away_team.name, contest.away_team %>
+            <% if away_team %>
+            <%= link_to away_team.name, away_team %>
+            <% if home_value && away_value %>
+            <small>±<%= (home_value - away_value).abs %></small>
+            <% end %>
             <% else %>
             N/A
             <% end %>

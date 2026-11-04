@@ -8,30 +8,35 @@ class CompetitionTest < ActiveSupport::TestCase
 
   test "refresh_teams creates teams and join records" do
     api_teams = [
-      { "team" => "Cackling Furies", "id" => 101, "value" => 1100, "cash" => 200_000, "rerolls" => 3, "apothecary" => 1, "assistant_coaches" => 0, "cheerleaders" => 0, "popularity" => 1, "logo" => nil, "coach_id" => 1, "race" => "human" },
-      { "team" => "Razorback Raiders", "id" => 102, "value" => 1250, "cash" => 150_000, "rerolls" => 2, "apothecary" => 0, "assistant_coaches" => 1, "cheerleaders" => 1, "popularity" => 2, "logo" => nil, "coach_id" => 2, "race" => "dwarf" }
+      { "team" => "Cackling Furies", "id" => 101, "rerolls" => 3, "apothecary" => 1, "coach_assistants" => 0, "cheerleaders" => 0, "dedicated_fans" => 1, "logo" => nil, "coach_id" => 1, "race" => "human" },
+      { "team" => "Razorback Raiders", "id" => 102, "rerolls" => 2, "apothecary" => 0, "coach_assistants" => 1, "cheerleaders" => 1, "dedicated_fans" => 2, "logo" => nil, "coach_id" => 2, "race" => "dwarf" }
     ]
     original = CyanideApi::Client.instance_method(:teams)
     CyanideApi::Client.define_method(:teams) { |**| { "teams" => api_teams } }
 
     assert @competition.refresh_teams
     assert_equal 2, @competition.teams.count
-    assert_equal "Cackling Furies", @competition.teams.find_by(api_id: "101").name
-    assert_equal 1100, @competition.teams.find_by(api_id: "101").value
+    team = @competition.teams.find_by(api_id: "101")
+    assert_equal "Cackling Furies", team.name
+    assert_nil team.value
+    assert_equal 1, team.popularity
   ensure
     CyanideApi::Client.define_method(:teams, original)
   end
 
-  test "refresh_teams reuses existing team records" do
-    existing = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "101")
-    api_teams = [{ "team" => "Cackling Furies", "id" => 101, "value" => 1200, "cash" => 0, "rerolls" => 0, "apothecary" => 0, "assistant_coaches" => 0, "cheerleaders" => 0, "popularity" => 0, "logo" => nil, "coach_id" => nil, "race" => "human" }]
+  test "refresh_teams preserves values not included in the list response" do
+    existing = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "101", value: 1200, cash: 50_000)
+    api_teams = [{ "team" => "Cackling Furies", "id" => 101, "rerolls" => 0, "apothecary" => 0, "coach_assistants" => 0, "cheerleaders" => 0, "dedicated_fans" => 4, "logo" => nil, "coach_id" => nil, "race" => "human" }]
     original = CyanideApi::Client.instance_method(:teams)
     CyanideApi::Client.define_method(:teams) { |**| { "teams" => api_teams } }
 
     @competition.refresh_teams
     assert_equal 1, @competition.teams.count
     assert_equal existing, @competition.teams.first
-    assert_equal 1200, existing.reload.value
+    existing.reload
+    assert_equal 1200, existing.value
+    assert_equal 50_000, existing.cash
+    assert_equal 4, existing.popularity
   ensure
     CyanideApi::Client.define_method(:teams, original)
   end
@@ -485,8 +490,8 @@ class CompetitionTest < ActiveSupport::TestCase
 
     api_response = {
       "ranking" => [
-        { "team" => { "id" => "id-101", "name" => "Cackling Furies", "rank" => 1, "w/d/l" => "6/1/1" }, "score" => 1850 },
-        { "team" => { "id" => "id-102", "name" => "Razorback Raiders", "rank" => 2, "w/d/l" => "4/2/3" }, "score" => 1720 }
+        { "team" => { "id" => "id-101", "name" => "Cackling Furies", "rank" => 1, "w/d/l" => "6/1/1", "tv" => 1100 }, "score" => 1850 },
+        { "team" => { "id" => "id-102", "name" => "Razorback Raiders", "rank" => 2, "w/d/l" => "4/2/3", "tv" => 1250 }, "score" => 1720 }
       ]
     }
     original = CyanideApi::Client.instance_method(:ladder)
@@ -502,6 +507,7 @@ class CompetitionTest < ActiveSupport::TestCase
     assert_equal 1, ct1.losses
     assert_equal 19, ct1.points
     assert_equal 1850, ct1.score
+    assert_equal 1100, team1.reload.value
 
     ct2.reload
     assert_equal 2, ct2.position
@@ -511,6 +517,7 @@ class CompetitionTest < ActiveSupport::TestCase
     assert_equal 3, ct2.losses
     assert_equal 14, ct2.points
     assert_equal 1720, ct2.score
+    assert_equal 1250, team2.reload.value
   ensure
     CyanideApi::Client.define_method(:ladder, original)
   end

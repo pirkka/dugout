@@ -17,6 +17,19 @@ class CompetitionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody tr td[style*='text-align: center']", count: 22
   end
 
+  test "shows team value difference in upcoming matches" do
+    teams(:cackling_furies).update!(value: 1200)
+    teams(:razorback_raiders).update!(value: 1000)
+    match = matches(:final_showdown)
+    match.match_teams.create!(team: teams(:cackling_furies), score: 1, conceded: 0)
+    match.match_teams.create!(team: teams(:razorback_raiders), score: 0, conceded: 1)
+
+    get competition_path(competitions(:rebell_season_15))
+
+    assert_response :success
+    assert_select "li small", text: "±200", count: 1
+  end
+
   test "groups matches by round with headings" do
     match = matches(:final_showdown)
     match.match_teams.create!(team: teams(:cackling_furies), score: 1, conceded: 0)
