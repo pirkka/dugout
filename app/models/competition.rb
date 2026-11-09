@@ -223,8 +223,8 @@ class Competition < ApplicationRecord
       mts = MatchTeam.joins(:match).where(matches: { competition_id: id }, team_id: ct.team_id)
       touchdowns_made = mts.sum(:score)
       touchdowns_sustained = mts.sum(:conceded)
-      casualties_made = mts.sum { |mt| mt.api_data&.dig("inflictedcasualties") || 0 }
-      casualties_sustained = mts.sum { |mt| mt.api_data&.dig("sustainedcasualties") || 0 }
+      casualties_made = mts.sum(&:inflicted_casualties)
+      casualties_sustained = mts.sum(&:sustained_casualties)
       ct.update!(touchdowns_made: touchdowns_made, touchdowns_sustained: touchdowns_sustained, casualties_made: casualties_made, casualties_sustained: casualties_sustained)
     end
   end

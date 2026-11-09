@@ -105,8 +105,8 @@ class Team < ApplicationRecord
       points: wins * 3 + draws,
       touchdowns_made: mts.sum(:score),
       touchdowns_sustained: mts.sum(:conceded),
-      casualties_made: mts.sum { |mt| mt.api_data&.dig("inflictedcasualties") || 0 },
-      casualties_sustained: mts.sum { |mt| mt.api_data&.dig("sustainedcasualties") || 0 }
+      casualties_made: mts.sum(&:inflicted_casualties),
+      casualties_sustained: mts.sum(&:sustained_casualties)
     )
     stat
   end

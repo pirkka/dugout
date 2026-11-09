@@ -422,6 +422,22 @@ class CompetitionTest < ActiveSupport::TestCase
     CyanideApi::Client.define_method(:contests, original)
   end
 
+  test "calculate_team_stats coerces string casualty values from the API" do
+    team = teams(:cackling_furies)
+    @competition.competition_teams.create!(team: team)
+    match = @competition.matches.create!(api_id: "stats-1", started: Time.zone.now)
+    match.match_teams.create!(team: team, result: :win, score: 2, conceded: 1,
+      api_data: { "inflictedcasualties" => "3", "sustainedcasualties" => "1" })
+
+    @competition.calculate_team_stats
+
+    ct = @competition.competition_teams.find_by(team: team)
+    assert_equal 2, ct.touchdowns_made
+    assert_equal 1, ct.touchdowns_sustained
+    assert_equal 3, ct.casualties_made
+    assert_equal 1, ct.casualties_sustained
+  end
+
   test "remove_duplicate_matches keeps only newest match for each team pairing" do
     home = Team.create!(name: "Cackling Furies", slug: "cackling-furies", api_id: "id-101")
     away = Team.create!(name: "Razorback Raiders", slug: "razorback-raiders", api_id: "id-102")

@@ -16,4 +16,20 @@ class MatchTeamTest < ActiveSupport::TestCase
     assert_equal 2, mt.score
     assert_equal 1, mt.conceded
   end
+
+  test "casualty helpers coerce string values from the API" do
+    mt = match_teams(:one_home)
+    mt.api_data = { "inflictedcasualties" => "3", "sustainedcasualties" => "1" }
+
+    assert_equal 3, mt.inflicted_casualties
+    assert_equal 1, mt.sustained_casualties
+  end
+
+  test "casualty helpers default to zero when api data is missing" do
+    mt = match_teams(:one_home)
+    mt.api_data = nil
+
+    assert_equal 0, mt.inflicted_casualties
+    assert_equal 0, mt.sustained_casualties
+  end
 end
